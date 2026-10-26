@@ -1112,6 +1112,8 @@ export default function App() {
           appName={state.config.appName}
           teacherPassword={state.config.teacherPassword}
           students={state.students}
+          className={state.config.className}
+          schoolYear={state.config.schoolYear}
           onLoginTeacher={handleLoginTeacher}
           onLoginStudent={handleLoginStudent}
         />

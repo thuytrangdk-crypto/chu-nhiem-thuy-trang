@@ -5,6 +5,11 @@
   --color-sky-accent: #a7dff6;
   --color-sky-primary: #0284c7;
   --color-sky-dark: #0369a1;
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
 }
 
 /* User coordinated palette utilities */
