@@ -80,7 +80,10 @@ export interface BoardNotice {
   type: NoticeType;
   image?: string; // Legacy single image data or URL (backward compatibility)
   images?: string[]; // Multiple images (Base64 data or URLs)
-  videoUrl?: string; // Video URL (YouTube, MP4, Google Drive, Vimeo...)
+  videoUrl?: string; // Video URL (YouTube, MP4, Google Drive, Vimeo, or Supabase Storage URL)
+  videoName?: string; // Original uploaded video file name
+  videoSize?: number; // Size in bytes
+  videoStoragePath?: string; // Path inside Supabase Storage bucket if uploaded
   linkUrl?: string; // Web link, Google Forms, Drive document, etc.
   linkTitle?: string; // Custom label for link
 }

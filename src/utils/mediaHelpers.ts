@@ -55,15 +55,81 @@ export const getGoogleDriveVideoEmbed = (url: string): string | null => {
 
 export const isDirectVideoFile = (url: string): boolean => {
   if (!url) return false;
-  const lower = url.toLowerCase().split('?')[0];
+  const clean = sanitizeUrl(url);
+  const lower = clean.toLowerCase().split('?')[0].split('#')[0];
   return (
     lower.endsWith('.mp4') ||
     lower.endsWith('.webm') ||
     lower.endsWith('.ogg') ||
     lower.endsWith('.mov') ||
-    url.startsWith('data:video/') ||
-    url.startsWith('blob:')
+    lower.endsWith('.m4v') ||
+    lower.endsWith('.mkv') ||
+    lower.endsWith('.avi') ||
+    lower.includes('/storage/v1/object/public/board_videos/') ||
+    clean.startsWith('data:video/') ||
+    clean.startsWith('blob:')
   );
+};
+
+export interface VideoFormatCheck {
+  isCompatible: boolean;
+  formatName: string;
+  warning?: string;
+  isRecommended: boolean;
+}
+
+export const checkVideoFormatCompatibility = (fileNameOrMime: string): VideoFormatCheck => {
+  const lower = (fileNameOrMime || '').toLowerCase();
+
+  if (lower.endsWith('.mp4') || lower === 'video/mp4') {
+    return {
+      isCompatible: true,
+      isRecommended: true,
+      formatName: 'MP4 (Chuẩn Web)',
+    };
+  }
+
+  if (lower.endsWith('.webm') || lower === 'video/webm') {
+    return {
+      isCompatible: true,
+      isRecommended: true,
+      formatName: 'WebM',
+    };
+  }
+
+  if (lower.endsWith('.mov') || lower === 'video/quicktime') {
+    return {
+      isCompatible: true,
+      isRecommended: false,
+      formatName: 'Apple QuickTime (.MOV)',
+      warning:
+        'Tệp quay từ iPhone/iPad (.mov). Có thể không phát mượt trên một số máy tính Windows hoặc Android cũ. Khuyên dùng tệp .mp4 để phụ huynh xem được trên mọi thiết bị.',
+    };
+  }
+
+  if (lower.endsWith('.ogg') || lower === 'video/ogg') {
+    return {
+      isCompatible: true,
+      isRecommended: true,
+      formatName: 'OGG Video',
+    };
+  }
+
+  if (lower.endsWith('.m4v')) {
+    return {
+      isCompatible: true,
+      isRecommended: true,
+      formatName: 'M4V',
+    };
+  }
+
+  const ext = fileNameOrMime.split('.').pop()?.toUpperCase() || 'Khác';
+  return {
+    isCompatible: false,
+    isRecommended: false,
+    formatName: ext,
+    warning: `Định dạng ${ext} thường không được trình duyệt web hỗ trợ phát trực tiếp. Video có thể không xem được trên điện thoại hoặc máy tính. Bạn nên chuyển đổi sang MP4 (H.264) trước khi tải lên.`,
+  };
 };
 
 export const extractDomain = (url: string): string => {
@@ -74,3 +140,4 @@ export const extractDomain = (url: string): string => {
     return url;
   }
 };
+

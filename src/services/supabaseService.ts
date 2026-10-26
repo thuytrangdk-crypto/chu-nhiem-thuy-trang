@@ -1,4 +1,4 @@
-import { supabase, SUPABASE_SCHEMA_SQL } from '../supabaseClient';
+import { supabase, SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL, SUPABASE_STORAGE_SQL } from '../supabaseClient';
 import { AppState } from '../types';
 
 export interface SyncStatus {
@@ -162,6 +162,147 @@ export const supabaseService = {
         success: false,
         error: err.message || 'Lỗi khi xóa bảng điểm trên Supabase.',
       };
+    }
+  },
+
+  // Storage Bucket check
+  async checkStorageBucket(bucketName = 'board_videos'): Promise<{ isReady: boolean; error?: string }> {
+    try {
+      const { data, error } = await supabase.storage.getBucket(bucketName);
+      if (error || !data) {
+        // Try creating bucket if allowed
+        const { error: createErr } = await supabase.storage.createBucket(bucketName, {
+          public: true,
+          fileSizeLimit: 104857600, // 100MB
+        });
+        if (createErr) {
+          return { isReady: false, error: error?.message || createErr.message };
+        }
+        return { isReady: true };
+      }
+      return { isReady: true };
+    } catch (err: any) {
+      return { isReady: false, error: err?.message || 'Không thể kiểm tra bucket Supabase Storage' };
+    }
+  },
+
+  // Upload Board Video to Supabase Storage with real-time byte progress
+  async uploadBoardVideo(
+    file: File,
+    onProgress?: (percent: number) => void
+  ): Promise<{
+    success: boolean;
+    url?: string;
+    path?: string;
+    name: string;
+    size: number;
+    error?: string;
+  }> {
+    const bucketName = 'board_videos';
+
+    if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
+      return {
+        success: false,
+        name: file.name,
+        size: file.size,
+        error:
+          'Ứng dụng chưa được cấu hình địa chỉ Supabase. Vui lòng kết nối Supabase hoặc chọn tùy chọn "Dán đường dẫn video".',
+      };
+    }
+
+    // Sanitize file name: remove accents, spaces, special chars
+    const cleanName = file.name
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_');
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 7);
+    const filePath = `notices/${timestamp}_${randomSuffix}_${cleanName}`;
+
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      const uploadUrl = `${SUPABASE_CONFIG.url}/storage/v1/object/${bucketName}/${filePath}`;
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable && onProgress) {
+          const percent = Math.min(99, Math.round((event.loaded / event.total) * 100));
+          onProgress(percent);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onProgress?.(100);
+          const publicUrl = `${SUPABASE_CONFIG.url}/storage/v1/object/public/${bucketName}/${filePath}`;
+          resolve({
+            success: true,
+            url: publicUrl,
+            path: filePath,
+            name: file.name,
+            size: file.size,
+          });
+        } else {
+          let errorMsg = `Tải lên thất bại (Mã lỗi ${xhr.status})`;
+          try {
+            const res = JSON.parse(xhr.responseText);
+            if (res.message) {
+              errorMsg = res.message;
+            } else if (res.error) {
+              errorMsg = res.error;
+            }
+          } catch (e) {}
+
+          const lower = errorMsg.toLowerCase();
+          if (xhr.status === 404 || lower.includes('bucket not found') || lower.includes('not found')) {
+            errorMsg = `Chưa tạo bucket '${bucketName}' trên Supabase Storage. Vui lòng vào Cài đặt Supabase > Sao chép mã SQL Storage và chạy trong Supabase SQL Editor.`;
+          } else if (
+            xhr.status === 403 ||
+            lower.includes('row-level security') ||
+            lower.includes('policy') ||
+            lower.includes('security violation')
+          ) {
+            errorMsg = `Lỗi phân quyền RLS Supabase Storage cho bucket '${bucketName}'. Vui lòng cấp quyền xem và tải tệp (RLS Policy) bằng mã SQL Storage.`;
+          } else if (xhr.status === 413 || lower.includes('payload too large') || lower.includes('exceeded')) {
+            errorMsg = `Dung lượng tệp (${(file.size / (1024 * 1024)).toFixed(1)}MB) vượt quá giới hạn cho phép của Supabase (tối đa 100MB).`;
+          }
+
+          resolve({
+            success: false,
+            name: file.name,
+            size: file.size,
+            error: errorMsg,
+          });
+        }
+      };
+
+      xhr.onerror = () => {
+        resolve({
+          success: false,
+          name: file.name,
+          size: file.size,
+          error:
+            'Lỗi kết nối mạng khi tải video lên máy chủ Supabase. Vui lòng kiểm tra lại đường truyền internet và thử lại.',
+        });
+      };
+
+      xhr.open('POST', uploadUrl);
+      xhr.setRequestHeader('apikey', SUPABASE_CONFIG.key);
+      xhr.setRequestHeader('Authorization', `Bearer ${SUPABASE_CONFIG.key}`);
+      xhr.setRequestHeader('x-upsert', 'true');
+      xhr.setRequestHeader('Content-Type', file.type || 'video/mp4');
+      xhr.send(file);
+    });
+  },
+
+  // Delete Board Video from Supabase Storage
+  async deleteBoardVideo(storagePath: string): Promise<{ success: boolean; error?: string }> {
+    if (!storagePath) return { success: true };
+    try {
+      const { error } = await supabase.storage.from('board_videos').remove([storagePath]);
+      if (error) return { success: false, error: error.message };
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err?.message || 'Lỗi khi xóa video khỏi Storage' };
     }
   },
 

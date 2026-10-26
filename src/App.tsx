@@ -1250,6 +1250,7 @@ export default function App() {
                     currentStudentId={authStudentId}
                     onPublishHonors={handlePublishAcademicHonors}
                     onShowToast={showToast}
+                    onOpenSupabaseModal={() => setIsSupabaseModalOpen(true)}
                   />
                 </div>
               )}

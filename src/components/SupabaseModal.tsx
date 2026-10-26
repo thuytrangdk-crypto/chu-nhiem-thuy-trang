@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Code2,
 } from 'lucide-react';
-import { SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL } from '../supabaseClient';
+import { SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL, SUPABASE_STORAGE_SQL } from '../supabaseClient';
 import { SyncStatus } from '../services/supabaseService';
 
 interface SupabaseModalProps {
@@ -32,14 +32,16 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
   onPullRemote,
   onClose,
 }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedType, setCopiedType] = useState<'all' | 'storage' | null>(null);
+  const [selectedSqlTab, setSelectedSqlTab] = useState<'all' | 'storage'>('all');
 
   if (!isOpen) return null;
 
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(SUPABASE_SCHEMA_SQL);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+  const handleCopySql = (type: 'all' | 'storage') => {
+    const textToCopy = type === 'all' ? SUPABASE_SCHEMA_SQL : SUPABASE_STORAGE_SQL;
+    navigator.clipboard.writeText(textToCopy);
+    setCopiedType(type);
+    setTimeout(() => setCopiedType(null), 2500);
   };
 
   return (
@@ -133,15 +135,38 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
 
           {/* SQL Setup Instructions (If table not created or for reference) */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
-                <Code2 className="w-4 h-4 text-blue-600" /> Mã tạo bảng dữ liệu (SQL Script):
-              </span>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              {/* Tab Selector */}
+              <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSqlTab('all')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    selectedSqlTab === 'all'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Toàn bộ (Bảng + Storage Video)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSqlTab('storage')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    selectedSqlTab === 'storage'
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Chỉ riêng Supabase Storage Video
+                </button>
+              </div>
+
               <button
-                onClick={handleCopySql}
+                onClick={() => handleCopySql(selectedSqlTab)}
                 className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
-                {copied ? (
+                {copiedType === selectedSqlTab ? (
                   <>
                     <Check className="w-3.5 h-3.5 text-emerald-600" />
                     <span>Đã sao chép!</span>
@@ -149,23 +174,25 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Sao chép mã SQL</span>
+                    <span>Sao chép mã SQL đang chọn</span>
                   </>
                 )}
               </button>
             </div>
 
             <div className="relative">
-              <pre className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-40 border border-slate-800">
-                {SUPABASE_SCHEMA_SQL}
+              <pre className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-44 border border-slate-800">
+                {selectedSqlTab === 'all' ? SUPABASE_SCHEMA_SQL : SUPABASE_STORAGE_SQL}
               </pre>
             </div>
 
-            <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-3.5 text-xs text-blue-900 space-y-1">
-              <p className="font-bold">Cách chạy trên Supabase (Chỉ mất 30 giây):</p>
+            <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-3.5 text-xs text-blue-900 space-y-1.5">
+              <p className="font-bold flex items-center gap-1.5">
+                <span>Cách chạy trên Supabase (Khoảng 30 giây):</span>
+              </p>
               <ol className="list-decimal list-inside space-y-1 text-blue-800 text-[11px]">
                 <li>
-                  Vào trang dự án của bạn trên{' '}
+                  Vào trang quản trị dự án trên{' '}
                   <a
                     href="https://supabase.com/dashboard"
                     target="_blank"
@@ -179,7 +206,10 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
                   Bấm vào mục <strong>SQL Editor</strong> ở thanh menu bên trái.
                 </li>
                 <li>
-                  Bấm <strong>New query</strong>, dán đoạn mã vừa sao chép ở trên vào và bấm <strong>Run</strong>.
+                  Bấm <strong>New query</strong>, dán đoạn mã vừa sao chép ở trên vào và bấm nút <strong>Run</strong>.
+                </li>
+                <li>
+                  Sau khi chạy, bucket <code>board_videos</code> sẽ tự động sẵn sàng lưu trữ video tệp lớn (lên tới 100MB/tệp) và phát trực tiếp trên mọi thiết bị.
                 </li>
               </ol>
             </div>

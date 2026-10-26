@@ -24,6 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Video as VideoIcon,
+  Film,
 } from 'lucide-react';
 import { AppState, BoardNotice, NoticeType, SeatingLayout } from '../types';
 import {
@@ -31,6 +32,7 @@ import {
   formatDisplayDate,
   getCurrentMonthStr,
   triggerConfetti,
+  formatFileSize,
 } from '../utils/helpers';
 import { getTop5AcademicHonors } from '../utils/academicHelpers';
 import {
@@ -40,6 +42,7 @@ import {
   sanitizeUrl,
   extractDomain,
 } from '../utils/mediaHelpers';
+import { supabaseService } from '../services/supabaseService';
 import { BoardNoticeModal } from './BoardNoticeModal';
 import { ConfirmModal } from './ConfirmModal';
 import { SeatingChartView } from './SeatingChartView';
@@ -57,6 +60,7 @@ interface BoardViewProps {
   initialTab?: 'notices' | 'seating' | 'rankings';
   onPublishHonors?: (month: string) => void;
   onShowToast: (msg: string, type?: 'success' | 'error') => void;
+  onOpenSupabaseModal?: () => void;
 }
 
 export const BoardView: React.FC<BoardViewProps> = ({
@@ -72,6 +76,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
   initialTab,
   onPublishHonors,
   onShowToast,
+  onOpenSupabaseModal,
 }) => {
   const [boardSubTab, setBoardSubTab] = useState<'notices' | 'seating' | 'rankings'>(
     initialTab || 'notices'
@@ -169,7 +174,10 @@ export const BoardView: React.FC<BoardViewProps> = ({
     images?: string[],
     videoUrl?: string,
     linkUrl?: string,
-    linkTitle?: string
+    linkTitle?: string,
+    videoName?: string,
+    videoSize?: number,
+    videoStoragePath?: string
   ) => {
     const noticeDate = date || new Date().toISOString().split('T')[0];
     if (noticeId && noticeToEdit && onUpdateNotice) {
@@ -184,6 +192,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
         videoUrl,
         linkUrl,
         linkTitle,
+        videoName,
+        videoSize,
+        videoStoragePath,
       });
       onShowToast?.('Đã thay đổi thông tin đã đăng thành công');
     } else {
@@ -197,6 +208,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
         videoUrl,
         linkUrl,
         linkTitle,
+        videoName,
+        videoSize,
+        videoStoragePath,
       });
       onShowToast?.('Đã đăng thông tin mới lên bảng tin');
     }
@@ -597,12 +611,28 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                       />
                                     </div>
                                   ) : isDirectVideo ? (
-                                    <video
-                                      src={sanitizeUrl(notice.videoUrl)}
-                                      controls
-                                      playsInline
-                                      className="w-full max-h-80 bg-black"
-                                    />
+                                    <div className="bg-black">
+                                      {notice.videoName && (
+                                        <div className="px-3.5 py-1.5 bg-slate-900 text-white text-[11px] font-semibold flex items-center justify-between border-b border-white/10">
+                                          <span className="truncate max-w-xs sm:max-w-md flex items-center gap-1.5">
+                                            <Film className="w-3.5 h-3.5 text-[#38bdf8]" />
+                                            <span>{notice.videoName}</span>
+                                          </span>
+                                          {notice.videoSize && (
+                                            <span className="text-[10px] text-slate-300 font-mono">
+                                              {formatFileSize(notice.videoSize)}
+                                            </span>
+                                          )}
+                                        </div>
+                                      )}
+                                      <video
+                                        src={sanitizeUrl(notice.videoUrl)}
+                                        controls
+                                        playsInline
+                                        preload="metadata"
+                                        className="w-full max-h-96 bg-black object-contain"
+                                      />
+                                    </div>
                                   ) : (
                                     <div className="p-3.5 bg-slate-900 text-white flex items-center justify-between gap-3">
                                       <div className="flex items-center gap-2.5 min-w-0">
@@ -614,7 +644,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                             Video đính kèm thông báo
                                           </p>
                                           <p className="text-[11px] text-slate-300 truncate">
-                                            {notice.videoUrl}
+                                            {notice.videoName || notice.videoUrl}
                                           </p>
                                         </div>
                                       </div>
@@ -955,15 +985,21 @@ export const BoardView: React.FC<BoardViewProps> = ({
           setIsNoticeModalOpen(false);
           setNoticeToEdit(null);
         }}
+        isTeacher={isTeacher}
+        onOpenSupabaseModal={onOpenSupabaseModal}
       />
 
       <ConfirmModal
         isOpen={!!noticeToDelete}
         title="Xóa thông tin đã đăng"
-        message="Bạn có chắc chắn muốn xóa bài đăng thông báo này khỏi bảng tin lớp không? Thao tác này sẽ cập nhật ngay lập tức."
+        message="Bạn có chắc chắn muốn xóa bài đăng thông báo này khỏi bảng tin lớp không? Nếu bài đăng có video lưu trên Cloud, tệp video cũng sẽ được giải phóng."
         confirmText="Xóa thông tin"
         onConfirm={() => {
           if (noticeToDelete) {
+            const targetNotice = state.boardNotices.find((n) => n.id === noticeToDelete);
+            if (targetNotice?.videoStoragePath) {
+              supabaseService.deleteBoardVideo(targetNotice.videoStoragePath);
+            }
             onDeleteNotice(noticeToDelete);
             setNoticeToDelete(null);
           }
