@@ -164,37 +164,48 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
   return (
     <div className="space-y-4 max-w-7xl mx-auto h-full flex flex-col pb-10 animate-fadeIn">
-      {/* Top Toolbar */}
-      <div className="flex flex-col lg:flex-row justify-between gap-3 bg-white p-4 rounded-3xl shadow-xs border border-[#E9E2DF] shrink-0">
-        {/* Search */}
-        <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280]" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên học sinh, mã HS, số điện thoại, mã ID..."
-            className="w-full pl-10 pr-4 py-2.5 bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] focus:bg-white transition-all text-xs sm:text-sm font-medium text-[#233044]"
-          />
-        </div>
+      {/* Top Toolbar: Two responsive tiers to prevent overflow */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl shadow-xs border border-[#E9E2DF] shrink-0 space-y-3">
+        {/* Tier 1: Search, Gender Filter, View Mode, Count Badge */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Search Box */}
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280]" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm theo tên học sinh, mã HS, số điện thoại, mã ID..."
+              className="w-full pl-10 pr-8 py-2 bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] focus:bg-white transition-all text-xs sm:text-sm font-medium text-[#233044]"
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-xs font-bold p-1 cursor-pointer"
+                title="Xóa tìm kiếm"
+              >
+                ✕
+              </button>
+            )}
+          </div>
 
-        {/* Filters & Actions */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {/* Gender Filter */}
           <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value as 'all' | Gender)}
-            className="px-3 py-2.5 bg-white border border-[#E9E2DF] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] font-medium text-[#233044] cursor-pointer"
+            className="px-3 py-2 bg-white border border-[#E9E2DF] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] font-medium text-[#233044] cursor-pointer"
           >
             <option value="all">Tất cả giới tính</option>
             <option value="Nam">Nam</option>
             <option value="Nữ">Nữ</option>
           </select>
 
-          {/* View toggle */}
-          <div className="flex bg-[#FAF0EE] rounded-xl p-1 border border-[#E9E2DF]">
+          {/* View Mode Toggle */}
+          <div className="flex bg-[#FAF0EE] rounded-xl p-0.5 border border-[#E9E2DF] shrink-0">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'grid'
                   ? 'bg-white shadow-xs text-[#8E2433] font-black'
                   : 'text-[#6B7280] hover:text-[#233044]'
@@ -205,7 +216,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'list'
                   ? 'bg-white shadow-xs text-[#8E2433] font-black'
                   : 'text-[#6B7280] hover:text-[#233044]'
@@ -216,76 +227,88 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </button>
           </div>
 
-          {/* Export Excel */}
-          <button
-            onClick={() => exportStudentsToExcel(state.students, state.config.className)}
-            className="px-3 py-2.5 bg-[#FFF8F3] hover:bg-[#FAF0EE] text-[#233044] font-bold rounded-xl text-xs sm:text-sm border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Xuất danh sách học sinh ra file Excel"
-          >
-            <Download className="w-4 h-4 text-emerald-600" />
-            <span className="hidden sm:inline">Xuất Excel</span>
-          </button>
+          {/* Total Students Badge */}
+          <div className="px-3 py-1.5 bg-[#FAF0EE] text-[#8E2433] rounded-xl text-xs font-black border border-[#E9E2DF] whitespace-nowrap sm:ml-auto">
+            Tổng: {state.students.length} HS
+          </div>
+        </div>
 
-          {isTeacher && (
-            <>
-              {/* Cập nhật mật khẩu khởi tạo – Lớp 8A3 */}
+        {/* Tier 2: Action Buttons Bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E9E2DF]/60">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Export Excel */}
+            <button
+              type="button"
+              onClick={() => exportStudentsToExcel(state.students, state.config.className)}
+              className="px-3 py-2 bg-[#FFF8F3] hover:bg-[#FAF0EE] text-[#233044] font-bold rounded-xl text-xs border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              title="Xuất danh sách học sinh ra file Excel"
+            >
+              <Download className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Xuất Excel</span>
+            </button>
+
+            {isTeacher && (
+              <>
+                {/* Mật khẩu khởi tạo 8A3 */}
+                <button
+                  type="button"
+                  onClick={() => setIsBatchPasswordModalOpen(true)}
+                  className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs border border-[#EBC9B9] flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                  title="Cập nhật mật khẩu khởi tạo chuẩn 10 số (Mã HS 2 số + Ngày sinh ddmmyyyy) cho lớp 8A3"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-[#8E2433]" />
+                  <span>Mật khẩu khởi tạo 8A3</span>
+                </button>
+
+                {/* Xuất Excel thi đua */}
+                <button
+                  type="button"
+                  onClick={() => setIsEmulationExportOpen(true)}
+                  className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title="Xuất Excel thi đua cho toàn bộ học sinh của lớp đang chọn"
+                >
+                  <Award className="w-3.5 h-3.5 text-[#8E2433]" />
+                  <span>Xuất Excel thi đua</span>
+                </button>
+
+                {/* Import Excel */}
+                <button
+                  type="button"
+                  onClick={() => setIsExcelOpen(true)}
+                  className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title="Nhập danh sách học sinh từ file Excel"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>Nhập Excel</span>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Right Group: Clear All & Add Student */}
+          <div className="flex items-center gap-2 ml-auto">
+            {isTeacher && state.students.length > 0 && onClearAllStudents && (
               <button
                 type="button"
-                onClick={() => setIsBatchPasswordModalOpen(true)}
-                className="px-3.5 py-2.5 bg-gradient-to-r from-[#8E2433] to-[#A33243] hover:from-[#721C28] hover:to-[#8E2433] active:from-[#5D1620] active:to-[#721C28] text-white font-black rounded-xl text-xs sm:text-sm shadow-md shadow-[#8E2433]/20 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                title="Cập nhật mật khẩu khởi tạo chuẩn 10 số (Mã HS 2 số + Ngày sinh ddmmyyyy) cho lớp 8A3"
+                onClick={() => setIsConfirmClearAllOpen(true)}
+                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs border border-rose-200 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                title="Xóa toàn bộ danh sách lớp"
               >
-                <KeyRound className="w-4 h-4 text-[#EBC9B9]" />
-                <span>Mật khẩu khởi tạo 8A3</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Làm sạch lớp</span>
               </button>
+            )}
 
-              {/* Xuất Excel thi đua */}
+            {isTeacher && (
               <button
                 type="button"
-                onClick={() => setIsEmulationExportOpen(true)}
-                className="px-3.5 py-2.5 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs sm:text-sm border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-                title="Xuất Excel thi đua cho toàn bộ học sinh của lớp đang chọn"
-              >
-                <Award className="w-4 h-4 text-[#8E2433]" />
-                <span className="hidden xl:inline">Xuất Excel thi đua</span>
-              </button>
-
-              {/* Import Excel */}
-              <button
-                onClick={() => setIsExcelOpen(true)}
-                className="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs sm:text-sm border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-                title="Nhập danh sách học sinh từ file Excel"
-              >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
-                <span>Nhập Excel</span>
-              </button>
-
-              {/* Add Student */}
-              <button
                 onClick={handleOpenAdd}
-                className="px-4 py-2.5 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-[#8E2433]/25 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-4 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-[#8E2433]/25 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Thêm HS</span>
               </button>
-
-              {/* Clear All Students Button */}
-              {state.students.length > 0 && onClearAllStudents && (
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmClearAllOpen(true)}
-                  className="px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs border border-rose-200 transition-colors cursor-pointer flex items-center gap-1"
-                  title="Xóa toàn bộ danh sách lớp"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span className="hidden xl:inline">Làm sạch lớp</span>
-                </button>
-              )}
-            </>
-          )}
-
-          <div className="px-3 py-2 bg-[#FAF0EE] text-[#8E2433] rounded-xl text-xs font-black border border-[#E9E2DF]">
-            Tổng: {state.students.length} HS
+            )}
           </div>
         </div>
       </div>

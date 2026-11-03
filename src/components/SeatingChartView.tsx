@@ -198,17 +198,17 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Seating Toolbar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xs border border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xs border border-[#E9E2DF] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-gray-900">
+            <h3 className="text-base font-bold text-[#233044]">
               Sơ đồ Chỗ ngồi Lớp {state.config.className}
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]">
               {occupiedCount}/{totalSeats} chỗ
             </span>
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
+          <p className="text-xs text-[#6B7280] mt-0.5">
             Mô hình: {layout.groups} tổ/dãy • {layout.rows} hàng bàn • Bàn đôi (2 học sinh/bàn)
           </p>
         </div>
@@ -216,25 +216,25 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
         {isTeacher && (
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {/* Table Rows Control */}
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl px-2 py-1 text-xs">
-              <span className="font-bold text-slate-500 mr-1">Quy mô:</span>
+            <div className="flex items-center gap-1 bg-[#FFF8F3] border border-[#E9E2DF] rounded-xl px-2 py-1 text-xs">
+              <span className="font-bold text-[#6B7280] mr-1">Quy mô:</span>
               <button
                 type="button"
                 onClick={handleRemoveRow}
                 disabled={layout.rows <= 3}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E9E2DF] text-[#233044] hover:bg-[#FAF0EE] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
                 title="Bớt 1 bàn mỗi dãy"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="font-black text-blue-700 px-1.5 min-w-[50px] text-center">
+              <span className="font-black text-[#8E2433] px-1.5 min-w-[50px] text-center">
                 {layout.rows} bàn/dãy
               </span>
               <button
                 type="button"
                 onClick={handleAddRow}
                 disabled={layout.rows >= 10}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E9E2DF] text-[#233044] hover:bg-[#FAF0EE] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
                 title="Thêm 1 bàn mỗi dãy"
               >
                 <Plus className="w-3 h-3" />
@@ -244,17 +244,17 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             {/* Auto Arrange Random */}
             <button
               onClick={() => handleAutoArrange('random')}
-              className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] text-xs font-bold rounded-xl border border-[#EBC9B9] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               title="Xếp ngẫu nhiên danh sách vào các chỗ"
             >
-              <Shuffle className="w-3.5 h-3.5 text-blue-600" />
+              <Shuffle className="w-3.5 h-3.5 text-[#8E2433]" />
               <span>Xếp ngẫu nhiên</span>
             </button>
 
             {/* Auto Arrange Gender */}
             <button
               onClick={() => handleAutoArrange('gender')}
-              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               title="Xếp xen kẽ nam và nữ"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
@@ -264,7 +264,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             {/* Clear All */}
             <button
               onClick={handleClearSeating}
-              className="px-3 py-2 bg-gray-50 hover:bg-red-50 text-gray-600 hover:text-red-600 text-xs font-bold rounded-xl border border-gray-200 transition-colors cursor-pointer"
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors cursor-pointer shadow-2xs"
               title="Xóa sơ đồ để xếp lại"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -274,7 +274,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             {/* Print Seating Chart */}
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
               title="In sơ đồ lớp để dán tại lớp"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -302,13 +302,13 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
       )}
 
       {/* Main Classroom Seating Layout */}
-      <div className="bg-white rounded-3xl shadow-xs border border-gray-100 p-6 overflow-x-auto print:border-none print:shadow-none">
+      <div className="bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-6 overflow-x-auto print:border-none print:shadow-none">
         {/* PODIUM / TEACHER DESK (BỤC GIẢNG & BÀN GIÁO VIÊN) */}
         <div className="max-w-md mx-auto mb-8 text-center">
-          <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-black py-2.5 px-6 rounded-2xl text-xs sm:text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2">
+          <div className="bg-gradient-to-r from-[#8E2433] via-[#9E2837] to-[#721C28] text-white font-black py-2.5 px-6 rounded-2xl text-xs sm:text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 border border-[#8E2433]/30">
             <span>BẢNG ĐEN • BỤC GIẢNG &amp; BÀN GIÁO VIÊN</span>
           </div>
-          <div className="h-4 border-l-2 border-r-2 border-dashed border-gray-200 mx-auto w-3/4" />
+          <div className="h-4 border-l-2 border-r-2 border-dashed border-[#E9E2DF] mx-auto w-3/4" />
         </div>
 
         {/* COLUMNS / GROUPS GRID */}
@@ -318,11 +318,11 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             return (
               <div
                 key={`group-${groupNum}`}
-                className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-3 flex flex-col space-y-3"
+                className="bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-2xl p-3 flex flex-col space-y-3"
               >
                 {/* Group Title Header */}
-                <div className="text-center pb-2 border-b border-slate-200">
-                  <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                <div className="text-center pb-2 border-b border-[#E9E2DF]">
+                  <span className="text-xs font-black text-[#233044] uppercase tracking-wider">
                     TỔ {groupNum} (DÃY {groupNum})
                   </span>
                 </div>
@@ -334,9 +334,9 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                     return (
                       <div
                         key={`g${groupNum}-r${rowNum}`}
-                        className="bg-white border border-slate-200 rounded-xl p-2 shadow-2xs hover:border-blue-300 transition-colors"
+                        className="bg-white border border-[#E9E2DF] rounded-xl p-2 shadow-2xs hover:border-[#8E2433]/40 transition-colors"
                       >
-                        <div className="text-[10px] text-gray-400 font-bold uppercase mb-1.5 flex justify-between items-center px-1">
+                        <div className="text-[10px] text-[#6B7280] font-bold uppercase mb-1.5 flex justify-between items-center px-1">
                           <span>Bàn {rowNum}</span>
                         </div>
 
@@ -366,12 +366,12 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                       : isSwapSource
                                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300 animate-pulse'
                                       : isSelected
-                                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-300'
+                                      ? 'border-[#8E2433] bg-[#FAF0EE] ring-2 ring-[#8E2433]/30'
                                       : student
                                       ? student.gender === 'Nam'
-                                        ? 'border-blue-100 bg-blue-50/30 hover:border-blue-300'
-                                        : 'border-pink-100 bg-pink-50/30 hover:border-pink-300'
-                                      : 'border-dashed border-gray-300 hover:border-blue-400 bg-gray-50/50 hover:bg-blue-50/20'
+                                        ? 'border-blue-100 bg-blue-50/20 hover:border-[#8E2433]/40'
+                                        : 'border-rose-100 bg-rose-50/20 hover:border-[#8E2433]/40'
+                                      : 'border-dashed border-[#E9E2DF] hover:border-[#8E2433]/40 bg-gray-50/40 hover:bg-[#FAF0EE]/30'
                                   }`}
                                 >
                                   {student ? (
