@@ -122,6 +122,7 @@ export default function App() {
   const [isClassSwitchOpen, setIsClassSwitchOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isTeacherPasswordModalOpen, setIsTeacherPasswordModalOpen] = useState(false);
+  const [mandatoryChangeStudentId, setMandatoryChangeStudentId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   // Supabase cloud sync status
@@ -379,7 +380,7 @@ export default function App() {
     showToast(`Xin chào cô ${state.config.teacherName}`);
   };
 
-  const handleLoginStudent = (studentId: string) => {
+  const handleLoginStudent = (studentId: string, isFirstTimeInitialPassword?: boolean) => {
     setAuthRole('student');
     setAuthStudentId(studentId);
     setSelectedStudentId(null);
@@ -390,6 +391,10 @@ export default function App() {
     );
     const s = state.students.find((x) => x.id === studentId);
     showToast(`Xin chào học sinh ${s ? s.name : ''}`);
+
+    if (isFirstTimeInitialPassword) {
+      setMandatoryChangeStudentId(studentId);
+    }
   };
 
   // Guard views: restrict student role to Board & Seating Chart and their own Profile
@@ -564,13 +569,44 @@ export default function App() {
     }));
   };
 
-  const handleChangePassword = (studentId: string, newPass: string) => {
+  const handleChangePassword = (studentId: string, newPass: string, isFromStudentSelf = false) => {
     updateAppState((prev) => ({
       ...prev,
       students: prev.students.map((s) =>
-        s.id === studentId ? { ...s, password: newPass } : s
+        s.id === studentId
+          ? {
+              ...s,
+              password: newPass,
+              isPasswordChanged: isFromStudentSelf ? true : s.isPasswordChanged,
+              passwordChangedAt: isFromStudentSelf ? new Date().toISOString() : s.passwordChangedAt,
+            }
+          : s
       ),
     }));
+  };
+
+  const handleBatchUpdateStudentPasswords = (updatedStudents: Student[]) => {
+    updateAppState((prev) => ({
+      ...prev,
+      students: updatedStudents,
+    }));
+    showToast('Đã cập nhật mật khẩu khởi tạo 10 số cho Lớp 8A3 thành công!', 'success');
+  };
+
+  const handleResetStudentPassword = (studentId: string, newPassword: string) => {
+    updateAppState((prev) => ({
+      ...prev,
+      students: prev.students.map((s) =>
+        s.id === studentId
+          ? {
+              ...s,
+              password: newPassword,
+              isPasswordChanged: false,
+            }
+          : s
+      ),
+    }));
+    showToast('Đã đặt lại mật khẩu học sinh thành công!', 'success');
   };
 
   // Attendance Handlers
@@ -1147,15 +1183,15 @@ export default function App() {
 
           <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
             {/* Slim mobile-only bar to open drawer (strictly on mobile, hidden on md+) */}
-            <div className="md:hidden h-11 bg-white border-b border-[#a7dff6]/60 flex items-center justify-between px-3 shrink-0 z-20">
+            <div className="md:hidden h-11 bg-white border-b border-[#E9E2DF] flex items-center justify-between px-3 shrink-0 z-20">
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="p-1.5 -ml-1 text-gray-700 hover:bg-[#d7effb]/30 rounded-lg flex items-center gap-2 text-xs font-bold cursor-pointer"
+                className="p-1.5 -ml-1 text-[#233044] hover:bg-[#FAF0EE] rounded-lg flex items-center gap-2 text-xs font-bold cursor-pointer"
                 aria-label="Mở menu"
               >
-                <Menu className="w-5 h-5 text-gray-700" />
-                <span className="font-black text-gray-900">Lớp {state.config.className}</span>
+                <Menu className="w-5 h-5 text-[#8E2433]" />
+                <span className="font-black text-[#233044]">Lớp {state.config.className}</span>
               </button>
               <div className="flex items-center gap-1.5">
                 <span
@@ -1163,14 +1199,14 @@ export default function App() {
                     syncStatus.isTableReady ? 'bg-emerald-500' : 'bg-amber-400'
                   }`}
                 />
-                <span className="text-[11px] font-bold text-gray-500">
+                <span className="text-[11px] font-bold text-[#6B7280]">
                   {pageTitles[currentView] || 'Trợ lý'}
                 </span>
               </div>
             </div>
 
-            {/* Main content viewport: expands to bottom without wasted top header */}
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-2 sm:p-3 lg:p-4 bg-gradient-to-br from-[#d7effb]/20 via-[#f8fafc] to-[#a7dff6]/15">
+            {/* Main content viewport: Luxury Education Warm Ivory (#FFF8F3) */}
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-2 sm:p-3 lg:p-4 bg-[#FFF8F3]">
               {authRole === 'teacher' && currentView === 'dashboard' && (
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   <DashboardView
@@ -1193,6 +1229,8 @@ export default function App() {
                     onUpdateStudent={handleUpdateStudent}
                     onDeleteStudent={handleDeleteStudent}
                     onBatchImportStudents={handleBatchImportStudents}
+                    onBatchUpdateStudentPasswords={handleBatchUpdateStudentPasswords}
+                    onResetStudentPassword={handleResetStudentPassword}
                     onRemoveSampleStudents={handleRemoveSampleStudents}
                     onClearAllStudents={handleClearAllStudents}
                     isTeacher={authRole === 'teacher'}
@@ -1299,6 +1337,22 @@ export default function App() {
             }}
             onClose={() => setIsTeacherPasswordModalOpen(false)}
           />
+
+          {/* Mandatory First-Time Student Password Change Modal */}
+          {mandatoryChangeStudentId && (
+            <ChangePasswordModal
+              isOpen={!!mandatoryChangeStudentId}
+              title="Đổi mật khẩu lần đầu"
+              description="Yêu cầu bảo mật cho học sinh lớp 8A3"
+              isFirstLoginMandatory={true}
+              onSave={(newPass) => {
+                handleChangePassword(mandatoryChangeStudentId, newPass, true);
+                setMandatoryChangeStudentId(null);
+                showToast('Chúc mừng em đã đổi mật khẩu cá nhân thành công!');
+              }}
+              onClose={() => setMandatoryChangeStudentId(null)}
+            />
+          )}
 
           {/* Supabase Cloud Connection & Sync Modal */}
           <SupabaseModal

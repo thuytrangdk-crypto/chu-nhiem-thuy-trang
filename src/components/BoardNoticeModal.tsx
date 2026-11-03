@@ -389,15 +389,15 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] border border-[#a7dff6]/60">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] border border-[#E9E2DF]">
         {/* Modal Header */}
-        <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#a7dff6]/60 bg-gradient-to-r from-[#d7effb]/50 to-[#a7dff6]/20 shrink-0">
+        <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#E9E2DF] bg-gradient-to-r from-[#FAF0EE] to-[#FFF8F3] shrink-0">
           <div className="flex items-center gap-2.5">
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-2xs ${
                 isEditing
                   ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                  : 'bg-[#d7effb] text-[#0284c7] border border-[#a7dff6]'
+                  : 'bg-[#FAF0EE] text-[#8E2433] border border-[#E9E2DF]'
               }`}
             >
               {isEditing ? (
@@ -407,12 +407,12 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
               )}
             </div>
             <div>
-              <h3 className="text-base font-black text-gray-900 leading-tight uppercase">
+              <h3 className="text-base font-black text-[#233044] leading-tight uppercase">
                 {isEditing
                   ? 'Thay đổi thông tin đã đăng'
                   : 'Đăng thông tin mới lên Bảng tin'}
               </h3>
-              <p className="text-[11px] text-gray-500 font-medium">
+              <p className="text-[11px] text-[#6B7280] font-medium">
                 {isEditing
                   ? 'Cập nhật nội dung, nhiều ảnh, video trực tiếp hoặc liên kết'
                   : 'Hỗ trợ tải video từ thiết bị, chèn nhiều ảnh và liên kết'}
@@ -427,7 +427,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
               className={`px-3.5 py-1.5 font-bold rounded-xl text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all ${
                 isUploading
                   ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-[#0284c7] hover:bg-[#0369a1] text-white cursor-pointer'
+                  : 'bg-[#8E2433] hover:bg-[#721C28] text-white cursor-pointer shadow-md shadow-[#8E2433]/20'
               }`}
               title="Lưu thông báo này"
             >
@@ -446,7 +446,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
             <button
               onClick={onClose}
               disabled={isUploading}
-              className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center border border-gray-200 transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center border border-[#E9E2DF] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -523,17 +523,17 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
             </div>
 
             {/* MULTIMEDIA ATTACHMENTS SECTION */}
-            <div className="bg-[#d7effb]/20 rounded-2xl border border-[#a7dff6]/80 p-3.5 space-y-3">
+            <div className="bg-[#FAF0EE]/40 rounded-2xl border border-[#E9E2DF] p-3.5 space-y-3">
               {/* Media Subtab Selector */}
-              <div className="flex items-center justify-between border-b border-[#a7dff6]/60 pb-2.5 flex-wrap gap-2">
+              <div className="flex items-center justify-between border-b border-[#E9E2DF] pb-2.5 flex-wrap gap-2">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setActiveMediaTab('images')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'images'
-                        ? 'bg-[#0284c7] text-white shadow-xs'
-                        : 'bg-white text-gray-700 hover:bg-[#d7effb]/50 border border-gray-200'
+                        ? 'bg-[#8E2433] text-white shadow-xs'
+                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
                     }`}
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
@@ -545,8 +545,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     onClick={() => setActiveMediaTab('video')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'video'
-                        ? 'bg-[#0284c7] text-white shadow-xs'
-                        : 'bg-white text-gray-700 hover:bg-[#d7effb]/50 border border-gray-200'
+                        ? 'bg-[#8E2433] text-white shadow-xs'
+                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
                     }`}
                   >
                     <VideoIcon className="w-3.5 h-3.5" />
@@ -558,8 +558,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     onClick={() => setActiveMediaTab('link')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'link'
-                        ? 'bg-[#0284c7] text-white shadow-xs'
-                        : 'bg-white text-gray-700 hover:bg-[#d7effb]/50 border border-gray-200'
+                        ? 'bg-[#8E2433] text-white shadow-xs'
+                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
                     }`}
                   >
                     <Link2 className="w-3.5 h-3.5" />
@@ -1097,7 +1097,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 className={`px-6 py-2.5 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 ${
                   isUploading
                     ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-[#0284c7] hover:bg-[#0369a1] text-white hover:shadow-sky-200 cursor-pointer'
+                    : 'bg-[#8E2433] hover:bg-[#721C28] text-white hover:shadow-[#8E2433]/25 cursor-pointer'
                 }`}
               >
                 {isUploading ? (

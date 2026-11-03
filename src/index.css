@@ -1,38 +1,107 @@
 @import "tailwindcss";
 
 :root {
-  --color-sky-light: #d7effb;
-  --color-sky-accent: #a7dff6;
-  --color-sky-primary: #0284c7;
-  --color-sky-dark: #0369a1;
+  /* Luxury Education Dashboard – Ruby Red & Warm Ivory */
+  --color-ruby: #8E2433;
+  --color-ruby-dark: #751c28;
+  --color-ruby-hover: #9f2a3a;
+  --color-ruby-light: #FAF0EE;
+  --color-ivory: #FFF8F3;
+  --color-card: #FFFFFF;
+  --color-nude: #EBC9B9;
+  --color-nude-light: #F7EAE3;
+  --color-navy: #233044;
+  --color-gray-subtle: #6B7280;
+  --color-border: #E9E2DF;
+
+  /* Backward-compatible variables re-mapped to Ruby & Warm Ivory */
+  --color-sky-light: #FAF0EE;
+  --color-sky-accent: #EBC9B9;
+  --color-sky-primary: #8E2433;
+  --color-sky-dark: #751c28;
+
   font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
+  color: #233044;
+  background-color: #FFF8F3;
 }
 
 body {
   font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
+  color: #233044;
+  background-color: #FFF8F3;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* User coordinated palette utilities */
+/* Luxury Palette Utility Classes */
+.bg-ruby {
+  background-color: #8E2433;
+}
+
+.bg-ruby-dark {
+  background-color: #751c28;
+}
+
+.bg-ruby-light {
+  background-color: #FAF0EE;
+}
+
+.bg-ivory {
+  background-color: #FFF8F3;
+}
+
+.bg-nude {
+  background-color: #EBC9B9;
+}
+
+.bg-nude-light {
+  background-color: #F7EAE3;
+}
+
+.text-ruby {
+  color: #8E2433;
+}
+
+.text-navy {
+  color: #233044;
+}
+
+.text-subtle {
+  color: #6B7280;
+}
+
+.border-ruby {
+  border-color: #8E2433;
+}
+
+.border-nude {
+  border-color: #EBC9B9;
+}
+
+.border-subtle {
+  border-color: #E9E2DF;
+}
+
+/* Re-mapped legacy classes for seamless whole-app harmony */
 .bg-sky-pastel {
-  background-color: #d7effb;
+  background-color: #FAF0EE;
 }
 
 .bg-sky-accent {
-  background-color: #a7dff6;
+  background-color: #EBC9B9;
 }
 
 .border-sky-accent {
-  border-color: #a7dff6;
+  border-color: #EBC9B9;
 }
 
 .border-sky-pastel {
-  border-color: #d7effb;
+  border-color: #FAF0EE;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.98);
+    transform: scale(0.985);
   }
   to {
     opacity: 1;
@@ -41,38 +110,38 @@ body {
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Custom smooth scrollbars */
+/* Custom smooth scrollbars with Ruby & Ivory theme */
 .custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: #94a3b8 #f1f5f9;
+  scrollbar-color: #D1C7C4 #FFF8F3;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #f8fafc;
+  background: #FFF8F3;
   border-radius: 9999px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #D1C7C4;
   border-radius: 9999px;
-  border: 1.5px solid #f8fafc;
+  border: 1.5px solid #FFF8F3;
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: #8E2433;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: #3b82f6;
+  background: #751c28;
 }

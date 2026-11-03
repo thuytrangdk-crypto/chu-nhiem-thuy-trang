@@ -62,25 +62,103 @@ export const normalizeDateInput = (str: string): string => {
   return str.trim().replace(/[\/\-\.\s]/g, '');
 };
 
+/**
+ * Lấy chuỗi 8 chữ số DDMMYYYY từ ngày sinh của học sinh
+ * Ví dụ: '2012-09-12' -> '12092012', '2012-05-08' -> '08052012'
+ */
+export const getStudentDob8Digits = (dob?: string): string | null => {
+  if (!dob) return null;
+  const clean = dob.trim();
+  if (clean.includes('-')) {
+    const parts = clean.split('-');
+    if (parts.length === 3) {
+      // Format YYYY-MM-DD
+      const yyyy = parts[0].padStart(4, '0');
+      const mm = parts[1].padStart(2, '0');
+      const dd = parts[2].padStart(2, '0');
+      return `${dd}${mm}${yyyy}`;
+    }
+  } else if (clean.includes('/')) {
+    const parts = clean.split('/');
+    if (parts.length === 3) {
+      // Format DD/MM/YYYY
+      const dd = parts[0].padStart(2, '0');
+      const mm = parts[1].padStart(2, '0');
+      const yyyy = parts[2].padStart(4, '0');
+      return `${dd}${mm}${yyyy}`;
+    }
+  }
+  const digits = clean.replace(/\D/g, '');
+  if (digits.length === 8) {
+    return digits;
+  }
+  return null;
+};
+
+/**
+ * Chuẩn hóa mã học sinh thành chuỗi 2 chữ số (giữ số 0 ở đầu)
+ * Ví dụ: '1' -> '01', 2 -> '02', '15' -> '15'
+ */
+export const formatStudentCode = (
+  code?: string | number,
+  fallbackIndex?: number
+): string => {
+  if (code !== undefined && code !== null && String(code).trim() !== '') {
+    const num = parseInt(String(code).trim().replace(/\D/g, ''), 10);
+    if (!isNaN(num) && num >= 1 && num <= 99) {
+      return String(num).padStart(2, '0');
+    }
+  }
+  if (fallbackIndex !== undefined && fallbackIndex >= 0) {
+    return String(fallbackIndex + 1).padStart(2, '0');
+  }
+  return '01';
+};
+
+/**
+ * Tạo mật khẩu khởi tạo 10 chữ số cho học sinh lớp 8A3:
+ * Mật khẩu khởi tạo = Mã học sinh 2 chữ số + Ngày sinh DDMMYYYY (Đúng 10 chữ số)
+ * Ví dụ: Mã '01', Ngày sinh '12/09/2012' -> '0112092012'
+ */
+export const generate10DigitInitialPassword = (
+  studentCode: string | number | undefined,
+  dob?: string,
+  fallbackIndex?: number
+): string | null => {
+  const code = formatStudentCode(studentCode, fallbackIndex);
+  const dob8 = getStudentDob8Digits(dob);
+  if (!dob8 || dob8.length !== 8) return null;
+  return `${code}${dob8}`;
+};
+
 export const matchesStudentDob = (student: Student, input: string): boolean => {
   if (!input) return false;
   const cleanInput = normalizeDateInput(input);
   if (!cleanInput) return false;
 
-  // Check against student.dob (format YYYY-MM-DD or DD/MM/YYYY)
-  if (student.dob) {
-    const cleanDob = normalizeDateInput(student.dob);
-    if (cleanInput === cleanDob) return true;
+  // 1. Kiểm tra khớp chính xác với mật khẩu hiện tại của học sinh (nếu có)
+  if (student.password && student.password.trim().toLowerCase() === cleanInput.toLowerCase()) {
+    return true;
+  }
 
-    const parts = student.dob.split('-');
-    if (parts.length === 3) {
-      const ddmmyyyy = `${parts[2]}${parts[1]}${parts[0]}`;
-      const yyyymmdd = `${parts[0]}${parts[1]}${parts[2]}`;
-      if (cleanInput === ddmmyyyy || cleanInput === yyyymmdd) return true;
+  // 2. Kiểm tra khớp với mật khẩu khởi tạo 10 chữ số (Mã 2 số + DDMMYYYY)
+  if (student.studentCode && student.dob) {
+    const pass10 = generate10DigitInitialPassword(student.studentCode, student.dob);
+    if (pass10 && cleanInput === pass10) {
+      return true;
     }
   }
 
-  // Also match student.id (often DDMMYYYY like 15052012)
+  // 3. Kiểm tra ngày sinh 8 chữ số DDMMYYYY hoặc YYYYMMDD
+  if (student.dob) {
+    const dob8 = getStudentDob8Digits(student.dob);
+    if (dob8 && cleanInput === dob8) return true;
+
+    const cleanDob = normalizeDateInput(student.dob);
+    if (cleanInput === cleanDob) return true;
+  }
+
+  // 4. Khớp với ID học sinh
   if (cleanInput.toUpperCase() === student.id.trim().toUpperCase()) return true;
   if (normalizeDateInput(student.id).toUpperCase() === cleanInput.toUpperCase()) return true;
 

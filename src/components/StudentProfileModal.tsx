@@ -420,12 +420,12 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-100 z-50 flex flex-col overflow-hidden animate-fadeIn">
+    <div className="fixed inset-0 bg-[#FFF8F3] z-50 flex flex-col overflow-hidden animate-fadeIn">
       {/* Top Navbar */}
-      <div className="bg-white border-b border-gray-200 h-16 shrink-0 flex items-center px-4 lg:px-8 shadow-xs relative z-20">
+      <div className="bg-white border-b border-[#E9E2DF] h-16 shrink-0 flex items-center px-4 lg:px-8 shadow-xs relative z-20">
         <button
           onClick={onClose}
-          className="text-gray-600 hover:text-gray-900 mr-3 p-2 rounded-xl hover:bg-gray-100 transition-colors flex items-center gap-1.5 font-bold text-xs sm:text-sm cursor-pointer"
+          className="text-[#6B7280] hover:text-[#233044] mr-3 p-2 rounded-xl hover:bg-[#FAF0EE] transition-colors flex items-center gap-1.5 font-bold text-xs sm:text-sm cursor-pointer"
           title="Quay lại giao diện lớp học"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -433,11 +433,11 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         </button>
 
         <div className="flex-1 min-w-0">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 leading-snug">
-            Hồ sơ học sinh: <span className="uppercase text-blue-700">{student.name}</span>
+          <h2 className="text-base sm:text-lg font-bold text-[#233044] leading-snug">
+            Hồ sơ học sinh: <span className="uppercase text-[#8E2433]">{student.name}</span>
           </h2>
-          <p className="text-[11px] text-gray-400 font-mono">
-            Mã định danh: {student.id}
+          <p className="text-[11px] text-[#6B7280] font-mono">
+            Mã định danh: {student.id} {student.studentCode ? `• Mã HS: ${student.studentCode}` : ''}
           </p>
         </div>
 
@@ -445,10 +445,10 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           {/* Print Report */}
           <button
             onClick={() => setIsPrintModalOpen(true)}
-            className="px-3 py-2 bg-[#d7effb]/70 hover:bg-[#a7dff6] text-sky-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-[#a7dff6]"
+            className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E9E2DF]"
             title="In phiếu liên lạc"
           >
-            <Printer className="w-3.5 h-3.5 text-[#0284c7]" />
+            <Printer className="w-3.5 h-3.5 text-[#8E2433]" />
             <span className="hidden sm:inline">Phiếu liên lạc</span>
           </button>
 
@@ -457,15 +457,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               {/* Change Password */}
               <button
                 onClick={() => setIsPasswordModalOpen(true)}
-                className="px-3 py-2 bg-[#d7effb]/70 hover:bg-[#a7dff6] text-sky-950 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-[#a7dff6]"
+                className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E9E2DF]"
               >
-                <KeyRound className="w-3.5 h-3.5 text-[#0284c7]" />
+                <KeyRound className="w-3.5 h-3.5 text-[#8E2433]" />
                 <span className="hidden sm:inline">Đổi mật khẩu</span>
               </button>
               {/* Logout */}
               <button
                 onClick={onLogout}
-                className="px-3 py-2 bg-gray-100 hover:bg-red-50 hover:text-red-600 text-gray-600 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Thoát</span>
@@ -476,7 +476,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
           {isTeacher && (
             <button
               onClick={() => onEditStudent(student)}
-              className="px-3.5 py-2 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+              className="px-3.5 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
             >
               <Edit2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Sửa thông tin</span>
@@ -486,17 +486,17 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
       </div>
 
       {/* Main Scrollable Area */}
-      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-gray-50/70">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-8 bg-[#FFF8F3]">
         <div className="max-w-5xl mx-auto space-y-6 pb-20">
           {/* OVERVIEW CARD */}
-          <div className="bg-white rounded-3xl shadow-xs border border-gray-100 p-6 flex flex-col items-center">
+          <div className="bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-6 flex flex-col items-center">
             {/* Avatar */}
             <div
               onClick={() => isTeacher && fileInputRef.current?.click()}
               className={`relative group mb-4 ${isTeacher ? 'cursor-pointer' : ''}`}
               title={isTeacher ? 'Bấm để đổi ảnh học sinh' : ''}
             >
-              <div className="w-24 h-24 rounded-full bg-[#d7effb] border-4 border-white text-sky-900 flex items-center justify-center text-4xl font-black shadow-md overflow-hidden ring-4 ring-[#a7dff6]/60">
+              <div className="w-24 h-24 rounded-full bg-[#FAF0EE] border-4 border-white text-[#8E2433] flex items-center justify-center text-4xl font-black shadow-md overflow-hidden ring-4 ring-[#EBC9B9]/60">
                 {student.avatar ? (
                   <img
                     src={student.avatar}
@@ -515,7 +515,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   {student.avatar && (
                     <button
                       onClick={handleRemoveAvatar}
-                      className="absolute bottom-0 right-0 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md border-2 border-white transition-colors cursor-pointer"
+                      className="absolute bottom-0 right-0 bg-rose-600 hover:bg-rose-700 text-white rounded-full w-7 h-7 flex items-center justify-center shadow-md border-2 border-white transition-colors cursor-pointer"
                       title="Xóa ảnh"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -533,19 +533,24 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             </div>
 
             {/* Name & Basic info */}
-            <h1 className="text-2xl sm:text-3xl font-black text-gray-900 uppercase tracking-tight text-center">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#233044] uppercase tracking-tight text-center">
               {student.name}
             </h1>
-            <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-semibold text-gray-500 mt-2 mb-6">
-              <span className={student.gender === 'Nam' ? 'text-[#0284c7] font-bold' : 'text-pink-600 font-bold'}>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-xs sm:text-sm font-semibold text-[#6B7280] mt-2 mb-6">
+              <span className={student.gender === 'Nam' ? 'text-blue-600 font-bold' : 'text-pink-600 font-bold'}>
                 {student.gender}
               </span>
-              <span className="text-gray-300">•</span>
+              <span className="text-[#E9E2DF]">•</span>
               <span>Ngày sinh: {formatDisplayDate(student.dob)}</span>
-              <span className="text-gray-300">•</span>
-              <span className="bg-[#d7effb] text-sky-950 px-2.5 py-0.5 rounded-lg font-mono font-black border border-[#a7dff6]">
-                ID: {student.id}
+              <span className="text-[#E9E2DF]">•</span>
+              <span className="bg-[#FAF0EE] text-[#8E2433] px-2.5 py-0.5 rounded-lg font-mono font-black border border-[#E9E2DF]">
+                Mã ID: {student.id}
               </span>
+              {student.studentCode && (
+                <span className="bg-[#FAF0EE] text-[#8E2433] px-2.5 py-0.5 rounded-lg font-mono font-black border border-[#E9E2DF]">
+                  Mã HS: #{student.studentCode}
+                </span>
+              )}
             </div>
 
             {/* 4 Clickable Quick Stat Cards */}
@@ -553,14 +558,14 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
               {/* Card 1: Điểm danh */}
               <div
                 onClick={() => handleJumpToTab('attendance')}
-                className="bg-[#d7effb]/35 hover:bg-[#a7dff6]/40 border border-[#a7dff6]/70 rounded-2xl p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:-translate-y-0.5 shadow-2xs"
+                className="bg-[#FAF0EE]/50 hover:bg-[#FAF0EE] border border-[#E9E2DF] rounded-2xl p-3.5 flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:-translate-y-0.5 shadow-2xs"
               >
-                <span className="text-[11px] font-black text-sky-950 uppercase flex items-center gap-1 mb-1">
-                  <CalendarCheck className="w-3.5 h-3.5 text-[#0284c7]" /> Điểm danh
+                <span className="text-[11px] font-black text-[#8E2433] uppercase flex items-center gap-1 mb-1">
+                  <CalendarCheck className="w-3.5 h-3.5 text-[#8E2433]" /> Điểm danh
                 </span>
-                <p className="text-xl font-black text-[#0284c7]">
+                <p className="text-xl font-black text-[#8E2433]">
                   {totalAbsences}{' '}
-                  <span className="text-xs font-semibold text-sky-800">vắng/muộn</span>
+                  <span className="text-xs font-semibold text-[#6B7280]">vắng/muộn</span>
                 </p>
               </div>
 
@@ -627,13 +632,13 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
             className="bg-white rounded-3xl shadow-xs border border-gray-100 overflow-hidden"
           >
             {/* Tab navigation */}
-            <div className="flex border-b border-gray-200 bg-gray-50/60 overflow-x-auto">
+            <div className="flex border-b border-[#E9E2DF] bg-[#FAF0EE]/50 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('info')}
                 className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === 'info'
-                    ? 'border-[#0284c7] text-[#0284c7] bg-[#d7effb]/30 font-black'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#d7effb]/15'
+                    ? 'border-[#8E2433] text-[#8E2433] bg-white font-black'
+                    : 'border-transparent text-[#6B7280] hover:text-[#233044] hover:bg-white/60'
                 }`}
               >
                 Thông tin cá nhân
@@ -642,8 +647,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 onClick={() => setActiveTab('attendance')}
                 className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === 'attendance'
-                    ? 'border-[#0284c7] text-[#0284c7] bg-[#d7effb]/30 font-black'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#d7effb]/15'
+                    ? 'border-[#8E2433] text-[#8E2433] bg-white font-black'
+                    : 'border-transparent text-[#6B7280] hover:text-[#233044] hover:bg-white/60'
                 }`}
               >
                 Điểm danh ({studentAtt.length})
@@ -652,8 +657,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 onClick={() => setActiveTab('grades')}
                 className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === 'grades'
-                    ? 'border-[#0284c7] text-[#0284c7] bg-[#d7effb]/30 font-black'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#d7effb]/15'
+                    ? 'border-[#8E2433] text-[#8E2433] bg-white font-black'
+                    : 'border-transparent text-[#6B7280] hover:text-[#233044] hover:bg-white/60'
                 }`}
               >
                 Học tập &amp; Điểm số
@@ -662,8 +667,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                 onClick={() => setActiveTab('discipline')}
                 className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                   activeTab === 'discipline'
-                    ? 'border-[#0284c7] text-[#0284c7] bg-[#d7effb]/30 font-black'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#d7effb]/15'
+                    ? 'border-[#8E2433] text-[#8E2433] bg-white font-black'
+                    : 'border-transparent text-[#6B7280] hover:text-[#233044] hover:bg-white/60'
                 }`}
               >
                 Thi đua &amp; Kỷ luật
@@ -673,8 +678,8 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   onClick={() => setActiveTab('notes')}
                   className={`px-6 py-4 text-xs sm:text-sm font-bold border-b-2 whitespace-nowrap transition-colors cursor-pointer ${
                     activeTab === 'notes'
-                      ? 'border-[#0284c7] text-[#0284c7] bg-[#d7effb]/30 font-black'
-                      : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-[#d7effb]/15'
+                      ? 'border-[#8E2433] text-[#8E2433] bg-white font-black'
+                      : 'border-transparent text-[#6B7280] hover:text-[#233044] hover:bg-white/60'
                   }`}
                 >
                   Sổ tay &amp; Liên hệ

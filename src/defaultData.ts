@@ -4,6 +4,7 @@ import { getTodayStr } from './utils/helpers';
 export const INITIAL_STUDENTS: Student[] = [
   {
     id: '15052012',
+    studentCode: '01',
     name: 'Nguyễn Văn An',
     dob: '2012-05-15',
     gender: 'Nam',
@@ -11,7 +12,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0912345678',
     address: '12 Phố Huế, Hai Bà Trưng, Hà Nội',
     avatar: '',
-    password: '15052012',
+    password: '0115052012',
     grades: {
       Toán: 8.5,
       'Ngữ văn': 7.8,
@@ -26,6 +27,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '20082012',
+    studentCode: '02',
     name: 'Trần Thị Bình',
     dob: '2012-08-20',
     gender: 'Nữ',
@@ -33,7 +35,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0987654321',
     address: '45 Cầu Giấy, Cầu Giấy, Hà Nội',
     avatar: '',
-    password: '20082012',
+    password: '0220082012',
     grades: {
       Toán: 9.0,
       'Ngữ văn': 9.2,
@@ -48,6 +50,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '10112012',
+    studentCode: '03',
     name: 'Lê Hoàng Châu',
     dob: '2012-11-10',
     gender: 'Nữ',
@@ -55,7 +58,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0903344556',
     address: '88 Kim Mã, Ba Đình, Hà Nội',
     avatar: '',
-    password: '10112012',
+    password: '0310112012',
     grades: {
       Toán: 8.0,
       'Ngữ văn': 8.5,
@@ -70,6 +73,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '03022012',
+    studentCode: '04',
     name: 'Phạm Đình Dũng',
     dob: '2012-02-03',
     gender: 'Nam',
@@ -77,7 +81,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0919988776',
     address: '32 Khâm Thiên, Đống Đa, Hà Nội',
     avatar: '',
-    password: '03022012',
+    password: '0403022012',
     grades: {
       Toán: 6.8,
       'Ngữ văn': 6.5,
@@ -92,6 +96,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '18092012',
+    studentCode: '05',
     name: 'Hoàng Thu Hằng',
     dob: '2012-09-18',
     gender: 'Nữ',
@@ -99,7 +104,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0977112233',
     address: '56 Lê Duẩn, Hoàn Kiếm, Hà Nội',
     avatar: '',
-    password: '18092012',
+    password: '0518092012',
     grades: {
       Toán: 9.2,
       'Ngữ văn': 9.0,
@@ -114,6 +119,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '25122012',
+    studentCode: '06',
     name: 'Đỗ Đức Kiên',
     dob: '2012-12-25',
     gender: 'Nam',
@@ -121,7 +127,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0934567890',
     address: '15 Trần Duy Hưng, Cầu Giấy, Hà Nội',
     avatar: '',
-    password: '25122012',
+    password: '0625122012',
     grades: {
       Toán: 7.5,
       'Ngữ văn': 7.0,
@@ -136,6 +142,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '09042012',
+    studentCode: '07',
     name: 'Vũ Thảo Linh',
     dob: '2012-04-09',
     gender: 'Nữ',
@@ -143,7 +150,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0988223344',
     address: '27 Chùa Bộc, Đống Đa, Hà Nội',
     avatar: '',
-    password: '09042012',
+    password: '0709042012',
     grades: {
       Toán: 8.8,
       'Ngữ văn': 8.5,
@@ -158,6 +165,7 @@ export const INITIAL_STUDENTS: Student[] = [
   },
   {
     id: '14072012',
+    studentCode: '08',
     name: 'Bùi Minh Quân',
     dob: '2012-07-14',
     gender: 'Nam',
@@ -165,7 +173,7 @@ export const INITIAL_STUDENTS: Student[] = [
     phone: '0945671234',
     address: '90 Hoàng Hoa Thám, Ba Đình, Hà Nội',
     avatar: '',
-    password: '14072012',
+    password: '0814072012',
     grades: {
       Toán: 6.5,
       'Ngữ văn': 6.0,
@@ -185,12 +193,12 @@ const today = getTodayStr();
 export const DEFAULT_INITIAL_STATE: AppState = {
   config: {
     appName: 'Trợ lý chủ nhiệm',
-    className: '9A5',
+    className: '8A3',
     schoolYear: '2026-2027',
     teacherName: 'Nguyễn Thị Diễm Hương',
     teacherPassword: 'admin',
     classAvatar: '',
-    availableClasses: ['9A5', '8A3', '7A1', '6A2'],
+    availableClasses: ['8A3', '9A5', '7A1', '6A2'],
     subjects: [
       'Toán',
       'Ngữ văn',

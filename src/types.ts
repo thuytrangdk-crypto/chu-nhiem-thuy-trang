@@ -35,6 +35,7 @@ export interface AppConfig {
 
 export interface Student {
   id: string;
+  studentCode?: string; // Mã học sinh 2 chữ số trong lớp 8A3 ('01', '02', ..., '15')
   name: string;
   dob: string; // YYYY-MM-DD
   gender: Gender;
@@ -43,6 +44,8 @@ export interface Student {
   address: string;
   avatar: string;
   password?: string;
+  isPasswordChanged?: boolean; // true nếu học sinh đã đổi mật khẩu cá nhân
+  passwordChangedAt?: string;
   grades?: Record<string, number>;
 }
 

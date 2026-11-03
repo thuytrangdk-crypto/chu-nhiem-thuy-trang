@@ -69,11 +69,11 @@ export const Header: React.FC<HeaderProps> = ({
     : 'H';
 
   return (
-    <header className="h-16 sm:h-18 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-6 lg:px-8 shrink-0 shadow-xs z-10">
+    <header className="h-16 sm:h-18 bg-white border-b border-[#E9E2DF] flex items-center justify-between px-3 sm:px-6 lg:px-8 shrink-0 shadow-xs z-10">
       <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onOpenMobileSidebar}
-          className="md:hidden text-gray-500 hover:text-gray-800 p-2 -ml-1 sm:-ml-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
+          className="md:hidden text-[#6B7280] hover:text-[#233044] p-2 -ml-1 sm:-ml-2 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer"
           aria-label="Mở menu"
         >
           <Menu className="w-5 h-5" />
@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => isTeacher && onUpdateClassAvatar && fileInputRef.current?.click()}
             className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-xs relative group ${
               isTeacher && onUpdateClassAvatar
-                ? 'cursor-pointer hover:ring-2 hover:ring-blue-400 transition-all'
+                ? 'cursor-pointer hover:ring-2 hover:ring-[#8E2433] transition-all'
                 : ''
             }`}
             title={isTeacher && onUpdateClassAvatar ? 'Bấm để đổi ảnh đại diện lớp' : `Lớp ${className}`}
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
             {classAvatar ? (
               <img src={classAvatar} alt="Lớp" className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-gradient-to-br from-emerald-400 via-cyan-500 to-blue-600 flex items-center justify-center text-white">
+              <div className="w-full h-full bg-gradient-to-br from-[#8E2433] via-[#A33243] to-[#EBC9B9] flex items-center justify-center text-white">
                 <GraduationCap className="w-5 h-5 text-white stroke-[2.2]" />
               </div>
             )}
@@ -115,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           <div>
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-              <span className="text-xs sm:text-base font-black text-slate-900 tracking-tight uppercase whitespace-nowrap">
+              <span className="text-xs sm:text-base font-black text-[#233044] tracking-tight uppercase whitespace-nowrap">
                 TRỢ LÝ CHỦ NHIỆM
               </span>
 
@@ -123,33 +123,33 @@ export const Header: React.FC<HeaderProps> = ({
               {isTeacher ? (
                 <button
                   onClick={onOpenClassSwitch}
-                  className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-xl bg-blue-50/90 hover:bg-blue-100 active:bg-blue-200 text-blue-700 font-extrabold text-xs border border-blue-200/90 shadow-2xs transition-all cursor-pointer touch-manipulation shrink-0"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:py-1 rounded-xl bg-[#FAF0EE] hover:bg-[#F5E5E0] active:bg-[#EBC9B9]/50 text-[#8E2433] font-black text-xs border border-[#E9E2DF] shadow-2xs transition-all cursor-pointer touch-manipulation shrink-0"
                   title="Bấm để đổi lớp hoặc năm học"
                 >
                   <span>Lớp {className}</span>
-                  <ChevronDown className="w-3.5 h-3.5 text-blue-600" />
+                  <ChevronDown className="w-3.5 h-3.5 text-[#8E2433]" />
                 </button>
               ) : (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-xl bg-blue-50 text-blue-700 font-extrabold text-xs border border-blue-200/90 shadow-2xs shrink-0">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-xl bg-[#FAF0EE] text-[#8E2433] font-black text-xs border border-[#E9E2DF] shadow-2xs shrink-0">
                   Lớp {className}
                 </span>
               )}
             </div>
 
             {/* Subline with role status */}
-            <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-slate-600 mt-0.5 truncate max-w-[190px] sm:max-w-none">
+            <div className="flex items-center gap-2 text-[11px] sm:text-xs font-semibold text-[#6B7280] mt-0.5 truncate max-w-[190px] sm:max-w-none">
               <span
                 className={`w-2 h-2 rounded-full shrink-0 ${
-                  isTeacher ? 'bg-emerald-500' : 'bg-cyan-500'
+                  isTeacher ? 'bg-emerald-500' : 'bg-[#8E2433]'
                 }`}
               />
               {isTeacher ? (
                 <span className="truncate">
-                  GVCN: <strong className="text-slate-800">{teacherName}</strong>
+                  GVCN: <strong className="text-[#233044]">{teacherName}</strong>
                 </span>
               ) : (
                 <span className="truncate">
-                  Học sinh: <strong className="text-blue-700">{studentName || 'Đang đăng nhập'}</strong>
+                  Học sinh: <strong className="text-[#8E2433]">{studentName || 'Đang đăng nhập'}</strong>
                 </span>
               )}
             </div>
@@ -184,10 +184,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Quick Home Button */}
         <button
           onClick={onGoHome}
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-bold border border-slate-200 transition-colors cursor-pointer"
+          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gray-50 hover:bg-[#FAF0EE] text-[#233044] hover:text-[#8E2433] text-xs font-bold border border-[#E9E2DF] transition-colors cursor-pointer"
           title={isTeacher ? "Về trang tổng quan" : "Về bảng tin & sơ đồ lớp"}
         >
-          <Home className="w-3.5 h-3.5 text-blue-600" />
+          <Home className="w-3.5 h-3.5 text-[#8E2433]" />
           <span>Trang chủ</span>
         </button>
 
@@ -195,10 +195,10 @@ export const Header: React.FC<HeaderProps> = ({
         {isTeacher && onOpenChangePassword && (
           <button
             onClick={onOpenChangePassword}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200 transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] text-xs font-bold border border-[#E9E2DF] transition-colors cursor-pointer shadow-2xs"
             title="Đổi mật khẩu quản lý giáo viên"
           >
-            <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+            <KeyRound className="w-3.5 h-3.5 text-[#8E2433]" />
             <span className="hidden sm:inline">Đổi mật khẩu</span>
           </button>
         )}
@@ -219,10 +219,10 @@ export const Header: React.FC<HeaderProps> = ({
         {onLogout && (
           <button
             onClick={onLogout}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold border border-red-200 transition-colors cursor-pointer shadow-2xs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200 transition-colors cursor-pointer shadow-2xs"
             title="Đăng xuất khỏi hệ thống"
           >
-            <LogOut className="w-3.5 h-3.5 text-red-500" />
+            <LogOut className="w-3.5 h-3.5 text-rose-600" />
             <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         )}
@@ -231,8 +231,8 @@ export const Header: React.FC<HeaderProps> = ({
         <div
           className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full text-white flex items-center justify-center font-black text-xs sm:text-sm shadow-sm ring-2 shrink-0 ${
             isTeacher
-              ? 'bg-gradient-to-tr from-cyan-500 to-blue-600 ring-blue-100'
-              : 'bg-gradient-to-tr from-emerald-500 to-teal-600 ring-emerald-100'
+              ? 'bg-gradient-to-tr from-[#8E2433] to-[#A33243] ring-[#EBC9B9]'
+              : 'bg-gradient-to-tr from-emerald-600 to-teal-700 ring-emerald-100'
           }`}
           title={isTeacher ? `GVCN: ${teacherName}` : `Học sinh: ${studentName}`}
         >

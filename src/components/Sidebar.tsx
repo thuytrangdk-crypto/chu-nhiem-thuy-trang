@@ -89,31 +89,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {isMobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-40 md:hidden transition-opacity"
         />
       )}
 
       <aside
-        className={`bg-white w-64 h-full border-r border-gray-200 flex flex-col fixed md:static z-50 transition-transform duration-300 shadow-xl md:shadow-none shrink-0 ${
+        className={`bg-white w-64 h-full border-r border-[#E9E2DF] flex flex-col fixed md:static z-50 transition-transform duration-300 shadow-xl md:shadow-none shrink-0 ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
       >
         {/* APP INFO BLOCK AT TOP OF SIDEBAR */}
-        <div className="p-3.5 border-b border-[#a7dff6]/70 shrink-0 bg-gradient-to-br from-[#d7effb]/50 to-[#a7dff6]/25">
+        <div className="p-4 border-b border-[#E9E2DF] shrink-0 bg-gradient-to-br from-[#FAF0EE] to-[#FFF8F3]">
           {/* Row 1: Logo + App Name + Close button on mobile */}
-          <div className="flex items-center justify-between gap-2 mb-2">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
             <div className="flex items-center gap-2.5 min-w-0">
               <div
                 onClick={() => isTeacher && onUpdateClassAvatar && fileInputRef.current?.click()}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-2xs relative group ${
-                  isTeacher && onUpdateClassAvatar ? 'cursor-pointer hover:ring-2 hover:ring-[#38bdf8]' : ''
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 overflow-hidden shadow-xs relative group ${
+                  isTeacher && onUpdateClassAvatar ? 'cursor-pointer hover:ring-2 hover:ring-[#8E2433]' : ''
                 }`}
                 title={isTeacher && onUpdateClassAvatar ? 'Bấm để đổi ảnh đại diện lớp' : `Lớp ${className}`}
               >
                 {classAvatar ? (
                   <img src={classAvatar} alt="Lớp" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-[#0284c7] via-[#38bdf8] to-[#a7dff6] flex items-center justify-center text-white">
+                  <div className="w-full h-full bg-gradient-to-br from-[#8E2433] via-[#A33243] to-[#EBC9B9] flex items-center justify-center text-white">
                     <GraduationCap className="w-5 h-5 text-white" />
                   </div>
                 )}
@@ -134,7 +134,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
 
               <div className="min-w-0">
-                <h1 className="text-xs font-black text-slate-900 tracking-tight uppercase leading-none truncate">
+                <h1 className="text-xs font-black text-[#233044] tracking-tight uppercase leading-none truncate">
                   TRỢ LÝ CHỦ NHIỆM
                 </h1>
                 {/* Class selector */}
@@ -145,14 +145,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       onOpenClassSwitch();
                       onCloseMobile();
                     }}
-                    className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#d7effb] hover:bg-[#a7dff6]/70 active:bg-[#a7dff6] text-sky-950 font-extrabold text-[11px] border border-[#a7dff6] shadow-2xs transition-colors cursor-pointer"
+                    className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-[#FAF0EE] hover:bg-[#F5E5E0] active:bg-[#EBC9B9]/50 text-[#8E2433] font-black text-[11px] border border-[#E9E2DF] shadow-2xs transition-colors cursor-pointer"
                     title="Bấm để đổi lớp hoặc năm học"
                   >
                     <span>Lớp {className}</span>
-                    <ChevronDown className="w-3 h-3 text-sky-700" />
+                    <ChevronDown className="w-3 h-3 text-[#8E2433]" />
                   </button>
                 ) : (
-                  <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-lg bg-[#d7effb] text-sky-950 font-extrabold text-[11px] border border-[#a7dff6]">
+                  <span className="mt-1.5 inline-flex items-center px-2.5 py-0.5 rounded-lg bg-[#FAF0EE] text-[#8E2433] font-black text-[11px] border border-[#E9E2DF]">
                     Lớp {className}
                   </span>
                 )}
@@ -162,7 +162,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Close button on mobile */}
             <button
               onClick={onCloseMobile}
-              className="md:hidden p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-200/60 transition-colors cursor-pointer shrink-0"
+              className="md:hidden p-1.5 rounded-lg text-[#6B7280] hover:text-[#233044] hover:bg-gray-100 transition-colors cursor-pointer shrink-0"
               aria-label="Đóng menu"
             >
               <X className="w-5 h-5" />
@@ -170,10 +170,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Row 2: GVCN name */}
-          <div className="text-[11px] font-semibold text-gray-600 truncate flex items-center gap-1.5 mb-2 px-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#0284c7] shrink-0" />
-            <span className="text-gray-400 font-medium">GVCN:</span>
-            <span className="text-gray-900 font-bold truncate">
+          <div className="text-[11px] font-semibold text-[#6B7280] truncate flex items-center gap-1.5 mb-2.5 px-0.5">
+            <span className="w-2 h-2 rounded-full bg-[#8E2433] shrink-0" />
+            <span className="text-[#6B7280] font-medium">GVCN:</span>
+            <span className="text-[#233044] font-bold truncate">
               {teacherName || 'Chưa thiết lập'}
             </span>
           </div>
@@ -189,15 +189,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }}
             className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl border text-[11px] font-bold transition-all cursor-pointer ${
               syncStatus?.isTableReady
-                ? 'bg-[#d7effb]/70 border-[#a7dff6] text-sky-950 hover:bg-[#a7dff6]/60 shadow-2xs'
+                ? 'bg-[#FAF0EE] border-[#E9E2DF] text-[#8E2433] hover:bg-[#F5E5E0] shadow-2xs'
                 : syncStatus?.isConnected
-                ? 'bg-amber-50/80 border-amber-200 text-amber-900 hover:bg-amber-100/80'
-                : 'bg-red-50/80 border-red-200 text-red-900 hover:bg-red-100/80'
+                ? 'bg-amber-50 border-amber-200 text-amber-900 hover:bg-amber-100'
+                : 'bg-red-50 border-red-200 text-red-900 hover:bg-red-100'
             }`}
             title="Bấm để kiểm tra đồng bộ Supabase Cloud"
           >
             <div className="flex items-center gap-1.5 truncate">
-              <Cloud className="w-3.5 h-3.5 shrink-0 text-[#0284c7]" />
+              <Cloud className="w-3.5 h-3.5 shrink-0 text-[#8E2433]" />
               <span className="truncate">
                 {syncStatus?.isTableReady
                   ? 'Supabase: Đã kết nối'
@@ -209,7 +209,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span
               className={`w-2 h-2 rounded-full shrink-0 ${
                 syncStatus?.isTableReady
-                  ? 'bg-[#0284c7] animate-pulse'
+                  ? 'bg-emerald-500 animate-pulse'
                   : syncStatus?.isConnected
                   ? 'bg-amber-400'
                   : 'bg-red-400'
@@ -219,7 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Navigation list */}
-        <nav className="flex-1 overflow-y-auto pt-3 pb-4 px-3 space-y-1 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto pt-3.5 pb-4 px-3 space-y-1.5 custom-scrollbar">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -239,15 +239,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-xl font-bold text-xs sm:text-sm transition-all text-left cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl font-bold text-xs sm:text-sm transition-all text-left cursor-pointer ${
                   isActive
-                    ? 'bg-gradient-to-r from-[#d7effb] to-[#a7dff6]/40 text-sky-950 font-black shadow-2xs border border-[#a7dff6]'
-                    : 'text-gray-600 hover:bg-[#d7effb]/30 hover:text-sky-900'
+                    ? 'bg-gradient-to-r from-[#8E2433] to-[#A33243] text-white font-black shadow-md shadow-[#8E2433]/20'
+                    : 'text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433]'
                 }`}
               >
                 <Icon
                   className={`w-5 h-5 ${
-                    isActive ? 'text-sky-700' : 'text-gray-400'
+                    isActive ? 'text-white' : 'text-[#6B7280]'
                   }`}
                 />
                 <span>{item.label}</span>
@@ -258,7 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {/* Teacher Only System Section */}
           {isTeacher && (
             <>
-              <div className="pt-4 pb-2 px-3 text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              <div className="pt-4 pb-2 px-3 text-[11px] font-black text-[#6B7280] uppercase tracking-wider">
                 Hệ thống
               </div>
 
@@ -268,10 +268,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenChangePassword();
                     onCloseMobile();
                   }}
-                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-gray-600 hover:bg-[#d7effb]/30 hover:text-sky-900 transition-all text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433] transition-all text-left cursor-pointer"
                   title="Đổi mật khẩu tài khoản giáo viên"
                 >
-                  <KeyRound className="w-4 h-4 text-sky-600" />
+                  <KeyRound className="w-4 h-4 text-[#8E2433]" />
                   <span>Đổi mật khẩu GV</span>
                 </button>
               )}
@@ -282,11 +282,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     onOpenSupabaseModal();
                     onCloseMobile();
                   }}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-gray-600 hover:bg-emerald-50/60 hover:text-emerald-800 transition-all text-left cursor-pointer group"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433] transition-all text-left cursor-pointer group"
                   title="Cấu hình & Đồng bộ hóa Supabase Cloud"
                 >
                   <div className="flex items-center gap-3">
-                    <Cloud className="w-5 h-5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                    <Cloud className="w-5 h-5 text-[#8E2433] group-hover:scale-110 transition-transform" />
                     <span>Supabase Cloud</span>
                   </div>
                   <span
@@ -309,15 +309,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onNavigate('settings');
                   onCloseMobile();
                 }}
-                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all text-left cursor-pointer ${
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all text-left cursor-pointer ${
                   currentView === 'settings'
-                    ? 'bg-gradient-to-r from-[#d7effb] to-[#a7dff6]/40 text-sky-950 font-black shadow-2xs border border-[#a7dff6]'
-                    : 'text-gray-600 hover:bg-[#d7effb]/30 hover:text-sky-900'
+                    ? 'bg-gradient-to-r from-[#8E2433] to-[#A33243] text-white font-black shadow-md shadow-[#8E2433]/20'
+                    : 'text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433]'
                 }`}
               >
                 <Settings
                   className={`w-4 h-4 ${
-                    currentView === 'settings' ? 'text-sky-700' : 'text-gray-400'
+                    currentView === 'settings' ? 'text-white' : 'text-[#6B7280]'
                   }`}
                 />
                 <span>Cài đặt</span>
@@ -327,18 +327,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         {/* Footer with Logout */}
-        <div className="p-4 border-t border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+        <div className="p-4 border-t border-[#E9E2DF] flex items-center justify-between shrink-0 bg-[#FFF8F3]/50">
           <div className="truncate max-w-[130px]">
-            <span className="text-xs font-bold text-gray-700 block truncate">
+            <span className="text-xs font-black text-[#233044] block truncate">
               {isTeacher ? 'Giáo viên' : studentName || 'Học sinh'}
             </span>
-            <span className="text-[10px] text-gray-400 block truncate">
+            <span className="text-[10px] text-[#6B7280] block truncate">
               {isTeacher ? 'Quyền quản lý' : 'Xem tin & Lớp học'}
             </span>
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-700 hover:bg-red-50 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-bold text-rose-700 hover:text-white hover:bg-[#8E2433] px-3 py-1.5 rounded-xl transition-all cursor-pointer"
             title="Đăng xuất khỏi hệ thống"
           >
             <LogOut className="w-3.5 h-3.5" />

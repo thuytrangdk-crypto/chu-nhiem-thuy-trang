@@ -14,17 +14,22 @@ import {
   FolderOpen,
   Lock,
   UserCheck,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react';
 import { AppState, Gender, Student } from '../types';
 import {
   exportStudentsToExcel,
   formatDisplayDate,
+  formatStudentCode,
   getTodayStr,
 } from '../utils/helpers';
 import { StudentFormModal } from './StudentFormModal';
 import { ExcelImportModal } from './ExcelImportModal';
 import { ConfirmModal } from './ConfirmModal';
 import { EmulationExportModal } from './EmulationExportModal';
+import { StudentPasswordBatchModal } from './StudentPasswordBatchModal';
+import { ResetStudentPasswordModal } from './ResetStudentPasswordModal';
 
 interface StudentsViewProps {
   state: AppState;
@@ -33,6 +38,8 @@ interface StudentsViewProps {
   onUpdateStudent: (student: Partial<Student>) => void;
   onDeleteStudent: (studentId: string) => void;
   onBatchImportStudents: (newStudents: Student[], mode?: 'append' | 'replace') => void;
+  onBatchUpdateStudentPasswords?: (updatedStudents: Student[]) => void;
+  onResetStudentPassword?: (studentId: string, newPassword: string) => void;
   onRemoveSampleStudents?: () => void;
   onClearAllStudents?: () => void;
   isTeacher: boolean;
@@ -47,6 +54,8 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   onUpdateStudent,
   onDeleteStudent,
   onBatchImportStudents,
+  onBatchUpdateStudentPasswords,
+  onResetStudentPassword,
   onRemoveSampleStudents,
   onClearAllStudents,
   isTeacher,
@@ -64,6 +73,11 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isConfirmClearAllOpen, setIsConfirmClearAllOpen] = useState(false);
   const [isEmulationExportOpen, setIsEmulationExportOpen] = useState(false);
+  const [isBatchPasswordModalOpen, setIsBatchPasswordModalOpen] = useState(false);
+  const [studentToResetPassword, setStudentToResetPassword] = useState<{
+    student: Student;
+    index: number;
+  } | null>(null);
 
   // Detect initial 8 sample students
   const sampleStudentIds = useMemo(
@@ -151,16 +165,16 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   return (
     <div className="space-y-4 max-w-7xl mx-auto h-full flex flex-col pb-10 animate-fadeIn">
       {/* Top Toolbar */}
-      <div className="flex flex-col lg:flex-row justify-between gap-3 bg-white p-4 rounded-3xl shadow-xs border border-gray-100 shrink-0">
+      <div className="flex flex-col lg:flex-row justify-between gap-3 bg-white p-4 rounded-3xl shadow-xs border border-[#E9E2DF] shrink-0">
         {/* Search */}
         <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6B7280]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Tìm theo tên học sinh, số điện thoại, mã ID..."
-            className="w-full pl-10 pr-4 py-2.5 bg-gray-50/80 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] focus:bg-white transition-all text-xs sm:text-sm font-medium"
+            placeholder="Tìm theo tên học sinh, mã HS, số điện thoại, mã ID..."
+            className="w-full pl-10 pr-4 py-2.5 bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] focus:bg-white transition-all text-xs sm:text-sm font-medium text-[#233044]"
           />
         </div>
 
@@ -169,7 +183,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value as 'all' | Gender)}
-            className="px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] font-medium cursor-pointer"
+            className="px-3 py-2.5 bg-white border border-[#E9E2DF] rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] font-medium text-[#233044] cursor-pointer"
           >
             <option value="all">Tất cả giới tính</option>
             <option value="Nam">Nam</option>
@@ -177,13 +191,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           </select>
 
           {/* View toggle */}
-          <div className="flex bg-gray-100 rounded-xl p-1 border border-gray-200">
+          <div className="flex bg-[#FAF0EE] rounded-xl p-1 border border-[#E9E2DF]">
             <button
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-white shadow-xs text-[#0284c7]'
-                  : 'text-gray-400 hover:text-gray-700'
+                  ? 'bg-white shadow-xs text-[#8E2433] font-black'
+                  : 'text-[#6B7280] hover:text-[#233044]'
               }`}
               title="Dạng thẻ (Grid)"
             >
@@ -193,8 +207,8 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg transition-all cursor-pointer ${
                 viewMode === 'list'
-                  ? 'bg-white shadow-xs text-[#0284c7]'
-                  : 'text-gray-400 hover:text-gray-700'
+                  ? 'bg-white shadow-xs text-[#8E2433] font-black'
+                  : 'text-[#6B7280] hover:text-[#233044]'
               }`}
               title="Dạng bảng (List)"
             >
@@ -205,8 +219,8 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           {/* Export Excel */}
           <button
             onClick={() => exportStudentsToExcel(state.students, state.config.className)}
-            className="px-3 py-2.5 bg-gray-50 hover:bg-[#d7effb]/30 text-gray-700 font-bold rounded-xl text-xs sm:text-sm border border-gray-200 hover:border-[#a7dff6] flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Xuất file Excel"
+            className="px-3 py-2.5 bg-[#FFF8F3] hover:bg-[#FAF0EE] text-[#233044] font-bold rounded-xl text-xs sm:text-sm border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Xuất danh sách học sinh ra file Excel"
           >
             <Download className="w-4 h-4 text-emerald-600" />
             <span className="hidden sm:inline">Xuất Excel</span>
@@ -214,30 +228,42 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
           {isTeacher && (
             <>
+              {/* Cập nhật mật khẩu khởi tạo – Lớp 8A3 */}
+              <button
+                type="button"
+                onClick={() => setIsBatchPasswordModalOpen(true)}
+                className="px-3.5 py-2.5 bg-gradient-to-r from-[#8E2433] to-[#A33243] hover:from-[#721C28] hover:to-[#8E2433] active:from-[#5D1620] active:to-[#721C28] text-white font-black rounded-xl text-xs sm:text-sm shadow-md shadow-[#8E2433]/20 flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                title="Cập nhật mật khẩu khởi tạo chuẩn 10 số (Mã HS 2 số + Ngày sinh ddmmyyyy) cho lớp 8A3"
+              >
+                <KeyRound className="w-4 h-4 text-[#EBC9B9]" />
+                <span>Mật khẩu khởi tạo 8A3</span>
+              </button>
+
               {/* Xuất Excel thi đua */}
               <button
                 type="button"
                 onClick={() => setIsEmulationExportOpen(true)}
-                className="px-3.5 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl text-xs sm:text-sm border border-purple-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                className="px-3.5 py-2.5 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-xl text-xs sm:text-sm border border-[#E9E2DF] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                 title="Xuất Excel thi đua cho toàn bộ học sinh của lớp đang chọn"
               >
-                <Award className="w-4 h-4 text-purple-600" />
-                <span>Xuất Excel thi đua</span>
+                <Award className="w-4 h-4 text-[#8E2433]" />
+                <span className="hidden xl:inline">Xuất Excel thi đua</span>
               </button>
 
               {/* Import Excel */}
               <button
                 onClick={() => setIsExcelOpen(true)}
-                className="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded-xl text-xs sm:text-sm border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-bold rounded-xl text-xs sm:text-sm border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Nhập danh sách học sinh từ file Excel"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                <FileSpreadsheet className="w-4 h-4 text-emerald-700" />
                 <span>Nhập Excel</span>
               </button>
 
               {/* Add Student */}
               <button
                 onClick={handleOpenAdd}
-                className="px-4 py-2.5 bg-[#0284c7] hover:bg-[#0369a1] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-sky-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                className="px-4 py-2.5 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-[#8E2433]/25 flex items-center gap-1.5 transition-all cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" />
                 <span>Thêm HS</span>
@@ -248,7 +274,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsConfirmClearAllOpen(true)}
-                  className="px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-xl text-xs border border-red-200 transition-colors cursor-pointer flex items-center gap-1"
+                  className="px-3 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl text-xs border border-rose-200 transition-colors cursor-pointer flex items-center gap-1"
                   title="Xóa toàn bộ danh sách lớp"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -258,7 +284,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
             </>
           )}
 
-          <div className="px-3 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-black border border-slate-200">
+          <div className="px-3 py-2 bg-[#FAF0EE] text-[#8E2433] rounded-xl text-xs font-black border border-[#E9E2DF]">
             Tổng: {state.students.length} HS
           </div>
         </div>
@@ -297,21 +323,21 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
       )}
 
       {/* Main Content: List or Grid */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-3xl shadow-xs border border-gray-100 p-4 relative min-h-[400px]">
+      <div className="flex-1 overflow-y-auto bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-4 relative min-h-[400px]">
         {filteredStudents.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
-            <FolderOpen className="w-16 h-16 text-gray-200 mb-3" />
-            <p className="text-base font-semibold text-gray-600">
+            <FolderOpen className="w-16 h-16 text-[#E9E2DF] mb-3" />
+            <p className="text-base font-semibold text-[#233044]">
               Không tìm thấy học sinh nào
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-[#6B7280] mt-1">
               Thử tìm kiếm với từ khóa khác hoặc bấm "Thêm HS" để tạo mới.
             </p>
           </div>
         ) : viewMode === 'grid' ? (
           /* GRID VIEW */
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
-            {filteredStudents.map((s) => {
+            {filteredStudents.map((s, index) => {
               const vios = state.discipline.filter(
                 (d) => d.studentId === s.id && d.type === 'minus'
               ).length;
@@ -324,6 +350,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
               );
 
               const isSelf = s.id === currentStudentId;
+              const studentCodeDisplay = formatStudentCode(s.studentCode, index + 1);
 
               return (
                 <div
@@ -333,11 +360,21 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     isSelf
                       ? 'border-emerald-400 ring-2 ring-emerald-200/70 shadow-sm'
                       : !isTeacher
-                      ? 'border-gray-200 hover:border-amber-300'
-                      : 'border-gray-200 hover:border-blue-400 hover:shadow-md'
+                      ? 'border-[#E9E2DF] hover:border-[#8E2433]/40'
+                      : 'border-[#E9E2DF] hover:border-[#8E2433] hover:shadow-md'
                   }`}
                 >
-                  {/* Student Mode Badge: Self vs Classmate */}
+                  {/* Student Code Badge (Top-Right) */}
+                  <div className="absolute top-2 right-2">
+                    <span
+                      className="inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FAF0EE] text-[#8E2433] text-[10px] font-black border border-[#E9E2DF] font-mono shadow-2xs"
+                      title={`Mã học sinh lớp 8A3: ${studentCodeDisplay}`}
+                    >
+                      #{studentCodeDisplay}
+                    </span>
+                  </div>
+
+                  {/* Student Mode Badge: Self vs Classmate (Top-Left) */}
                   {!isTeacher && (
                     <div className="absolute top-2 left-2">
                       {isSelf ? (
@@ -355,7 +392,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                   {/* Warning banner if high violations (Teacher only) */}
                   {isTeacher && vios >= 2 && (
                     <div
-                      className="absolute top-0 right-0 bg-red-500 text-white p-1 rounded-bl-xl text-[10px]"
+                      className="absolute top-0 right-10 bg-rose-600 text-white p-1 rounded-bl-xl text-[10px]"
                       title="Nhiều vi phạm"
                     >
                       <AlertTriangle className="w-3.5 h-3.5" />
@@ -364,7 +401,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
                   {/* Avatar */}
                   <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-xl mb-3 shadow-xs overflow-hidden group-hover:scale-105 transition-transform ${
-                    isSelf ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700' : 'bg-blue-50 border-2 border-blue-100 text-blue-700'
+                    isSelf ? 'bg-emerald-50 border-2 border-emerald-200 text-emerald-700' : 'bg-[#FAF0EE] border-2 border-[#E9E2DF] text-[#8E2433]'
                   }`}>
                     {s.avatar ? (
                       <img
@@ -379,13 +416,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
                   {/* Name */}
                   <h4
-                    className="font-bold text-gray-900 text-xs sm:text-sm mb-1 group-hover:text-blue-600 transition-colors uppercase w-full min-h-[2.5rem] flex items-center justify-center text-center break-words leading-snug px-1"
+                    className="font-bold text-[#233044] text-xs sm:text-sm mb-1 group-hover:text-[#8E2433] transition-colors uppercase w-full min-h-[2.5rem] flex items-center justify-center text-center break-words leading-snug px-1"
                     title={s.name}
                   >
                     {s.name}
                   </h4>
 
-                  <div className="text-[11px] text-gray-500 mb-3 flex items-center justify-center gap-1.5 flex-wrap">
+                  <div className="text-[11px] text-[#6B7280] mb-2 flex items-center justify-center gap-1.5 flex-wrap">
                     <span
                       className={`font-semibold ${
                         s.gender === 'Nam' ? 'text-blue-600' : 'text-pink-600'
@@ -393,12 +430,30 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     >
                       {s.gender}
                     </span>
-                    <span className="text-gray-300">•</span>
+                    <span className="text-[#E9E2DF]">•</span>
                     <span>{formatDisplayDate(s.dob)}</span>
                   </div>
 
+                  {/* Quick Teacher Actions on Card */}
+                  {isTeacher && (
+                    <div className="w-full flex items-center justify-center gap-1.5 mb-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStudentToResetPassword({ student: s, index: index + 1 });
+                        }}
+                        className="p-1 px-2 rounded-lg bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] text-[10px] font-bold border border-[#E9E2DF] flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Đặt lại mật khẩu cho học sinh này"
+                      >
+                        <KeyRound className="w-3 h-3" />
+                        <span>Đặt lại MK</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Attendance status today */}
-                  <div className="mt-auto w-full pt-3 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                  <div className="mt-auto w-full pt-2.5 border-t border-[#E9E2DF] flex items-center justify-between text-[11px]">
                     <div className="font-semibold">
                       {attToday?.status === 'c' && (
                         <span className="text-emerald-600">Có mặt</span>
@@ -407,7 +462,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                         <span className="text-blue-600">Có phép</span>
                       )}
                       {attToday?.status === 'kp' && (
-                        <span className="text-red-600 font-bold">Không phép</span>
+                        <span className="text-rose-600 font-bold">Không phép</span>
                       )}
                       {attToday?.status === 'm' && (
                         <span className="text-amber-600 font-bold">Muộn</span>
@@ -422,7 +477,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                         </span>
                       )}
                       {vios > 0 && (
-                        <span className="text-red-500 flex items-center gap-0.5" title="Vi phạm">
+                        <span className="text-rose-600 flex items-center gap-0.5" title="Vi phạm">
                           <AlertTriangle className="w-3 h-3" /> {vios}
                         </span>
                       )}
@@ -436,33 +491,37 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           /* LIST VIEW */
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs sm:text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-[#FAF0EE]/60 border-b border-[#E9E2DF]">
                 <tr>
-                  <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider w-14 text-center">
+                  <th className="px-3 py-3 font-bold text-[#6B7280] uppercase tracking-wider w-12 text-center">
                     STT
                   </th>
-                  <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="px-3 py-3 font-bold text-[#8E2433] uppercase tracking-wider w-20 text-center">
+                    Mã HS
+                  </th>
+                  <th className="px-4 py-3 font-bold text-[#6B7280] uppercase tracking-wider">
                     Học sinh
                   </th>
-                  <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider w-24">
+                  <th className="px-4 py-3 font-bold text-[#6B7280] uppercase tracking-wider w-24">
                     Giới tính
                   </th>
-                  <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider w-32">
+                  <th className="px-4 py-3 font-bold text-[#6B7280] uppercase tracking-wider w-32">
                     Ngày sinh
                   </th>
-                  <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                  <th className="px-4 py-3 font-bold text-[#6B7280] uppercase tracking-wider hidden md:table-cell">
                     Phụ huynh &amp; Liên hệ
                   </th>
                   {isTeacher && (
-                    <th className="px-4 py-3 font-bold text-gray-500 uppercase tracking-wider w-28 text-center">
+                    <th className="px-4 py-3 font-bold text-[#6B7280] uppercase tracking-wider w-36 text-center">
                       Thao tác
                     </th>
                   )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 bg-white">
+              <tbody className="divide-y divide-[#E9E2DF] bg-white">
                 {filteredStudents.map((s, index) => {
                   const isSelf = s.id === currentStudentId;
+                  const studentCodeDisplay = formatStudentCode(s.studentCode, index + 1);
                   return (
                     <tr
                       key={s.id}
@@ -470,16 +529,21 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                       className={`transition-colors cursor-pointer group ${
                         isSelf
                           ? 'bg-emerald-50/60 hover:bg-emerald-100/50'
-                          : 'hover:bg-blue-50/50'
+                          : 'hover:bg-[#FAF0EE]/40'
                       }`}
                     >
-                      <td className="px-4 py-3 text-center text-gray-400 font-semibold group-hover:text-blue-600">
+                      <td className="px-3 py-3 text-center text-[#6B7280] font-semibold group-hover:text-[#8E2433]">
                         {index + 1}
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="px-2 py-0.5 rounded-md bg-[#FAF0EE] text-[#8E2433] font-mono font-black text-xs border border-[#E9E2DF] shadow-2xs">
+                          {studentCodeDisplay}
+                        </span>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 overflow-hidden ${
-                            isSelf ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-300' : 'bg-blue-100 text-blue-700'
+                            isSelf ? 'bg-emerald-100 text-emerald-800 ring-2 ring-emerald-300' : 'bg-[#FAF0EE] text-[#8E2433]'
                           }`}>
                             {s.avatar ? (
                               <img
@@ -492,7 +556,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                             )}
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900 group-hover:text-blue-700 uppercase flex items-center gap-1.5">
+                            <p className="font-bold text-[#233044] group-hover:text-[#8E2433] uppercase flex items-center gap-1.5">
                               <span>{s.name}</span>
                               {!isTeacher && isSelf && (
                                 <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
@@ -505,7 +569,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                                 </span>
                               )}
                             </p>
-                            <span className="text-[10px] text-gray-400 font-mono">
+                            <span className="text-[10px] text-[#6B7280] font-mono">
                               ID: {s.id}
                             </span>
                           </div>
@@ -520,18 +584,18 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                           {s.gender}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">
+                      <td className="px-4 py-3 text-[#233044]">
                         {formatDisplayDate(s.dob)}
                       </td>
                       <td className="px-4 py-3 hidden md:table-cell">
                         {isTeacher || isSelf ? (
                           <>
-                            <p className="text-gray-800 font-medium">
+                            <p className="text-[#233044] font-medium">
                               {s.parentName || '-'}
                             </p>
                             {s.phone && (
-                              <p className="text-gray-500 text-xs flex items-center gap-1 mt-0.5">
-                                <Phone className="w-3 h-3 text-gray-400" /> {s.phone}
+                              <p className="text-[#6B7280] text-xs flex items-center gap-1 mt-0.5">
+                                <Phone className="w-3 h-3 text-[#6B7280]" /> {s.phone}
                               </p>
                             )}
                           </>
@@ -543,16 +607,27 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center gap-1.5">
                           <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setStudentToResetPassword({ student: s, index: index + 1 });
+                            }}
+                            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-[#FAF0EE] text-gray-400 hover:text-[#8E2433] flex items-center justify-center transition-colors cursor-pointer"
+                            title="Đặt lại mật khẩu cho học sinh"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={(e) => handleOpenEdit(s, e)}
-                            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-blue-100 text-gray-400 hover:text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Chỉnh sửa"
+                            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-blue-50 text-gray-400 hover:text-blue-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Chỉnh sửa thông tin"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={(e) => handleOpenDelete(s, e)}
-                            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-red-100 text-gray-400 hover:text-red-600 flex items-center justify-center transition-colors cursor-pointer"
-                            title="Xóa"
+                            className="w-8 h-8 rounded-lg bg-gray-50 hover:bg-rose-50 text-gray-400 hover:text-rose-600 flex items-center justify-center transition-colors cursor-pointer"
+                            title="Xóa học sinh"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -619,6 +694,29 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         state={state}
         onClose={() => setIsEmulationExportOpen(false)}
         onShowToast={onShowToast}
+      />
+
+      {/* Batch 10-Digit Password Update Modal for 8A3 */}
+      <StudentPasswordBatchModal
+        isOpen={isBatchPasswordModalOpen}
+        className={state.config.className || '8A3'}
+        students={state.students}
+        onConfirmBatchUpdate={(updatedStudents) => {
+          onBatchUpdateStudentPasswords?.(updatedStudents);
+        }}
+        onClose={() => setIsBatchPasswordModalOpen(false)}
+      />
+
+      {/* Individual Student Password Reset Modal */}
+      <ResetStudentPasswordModal
+        isOpen={!!studentToResetPassword}
+        student={studentToResetPassword?.student || null}
+        fallbackIndex={studentToResetPassword?.index}
+        onConfirmReset={(studentId, newPassword) => {
+          onResetStudentPassword?.(studentId, newPassword);
+          setStudentToResetPassword(null);
+        }}
+        onClose={() => setStudentToResetPassword(null)}
       />
     </div>
   );
