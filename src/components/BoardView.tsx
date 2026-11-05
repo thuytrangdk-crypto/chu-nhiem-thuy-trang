@@ -25,6 +25,8 @@ import {
   ChevronRight,
   Video as VideoIcon,
   Film,
+  Search,
+  Pin,
 } from 'lucide-react';
 import { AppState, BoardNotice, NoticeType, SeatingLayout } from '../types';
 import {
@@ -90,6 +92,18 @@ export const BoardView: React.FC<BoardViewProps> = ({
     index: number;
     title: string;
   } | null>(null);
+
+  const [noticeSearch, setNoticeSearch] = useState('');
+  const [noticeCategoryFilter, setNoticeCategoryFilter] = useState<string>('all');
+
+  const NOTICE_CATEGORIES = [
+    { id: 'all', label: 'Tất cả' },
+    { id: 'general', label: 'Thông tin chung' },
+    { id: 'study', label: 'Kế hoạch học tập' },
+    { id: 'activity', label: 'Hoạt động ngoại khóa' },
+    { id: 'warning', label: 'Nhắc nhở' },
+    { id: 'reward', label: 'Khen thưởng' },
+  ];
 
   React.useEffect(() => {
     if (initialTab) {
@@ -164,6 +178,42 @@ export const BoardView: React.FC<BoardViewProps> = ({
       .slice(0, 5);
   }, [state.students, state.discipline, selectedMonth, state.config.initialPoints]);
 
+  const filteredNotices = useMemo(() => {
+    const query = noticeSearch.trim().toLowerCase();
+    return [...state.boardNotices]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .filter((notice) => {
+        if (query) {
+          const matchTitle = notice.title?.toLowerCase().includes(query);
+          const matchContent = notice.content?.toLowerCase().includes(query);
+          const matchLink = notice.linkTitle?.toLowerCase().includes(query);
+          if (!matchTitle && !matchContent && !matchLink) return false;
+        }
+
+        if (noticeCategoryFilter === 'all') return true;
+        const t = (notice.title || '').toLowerCase();
+        const c = (notice.content || '').toLowerCase();
+
+        if (noticeCategoryFilter === 'reward') {
+          return notice.type === 'success' || t.includes('khen') || t.includes('giải') || t.includes('thành tích') || c.includes('khen thưởng');
+        }
+        if (noticeCategoryFilter === 'warning') {
+          return notice.type === 'warning' || t.includes('nhắc nhở') || t.includes('chú ý') || t.includes('lưu ý') || c.includes('nhắc nhở');
+        }
+        if (noticeCategoryFilter === 'study') {
+          return t.includes('học tập') || t.includes('kế hoạch') || t.includes('lịch thi') || t.includes('ôn tập') || t.includes('kiểm tra') || c.includes('học tập') || c.includes('lịch thi');
+        }
+        if (noticeCategoryFilter === 'activity') {
+          return t.includes('hoạt động') || t.includes('ngoại khóa') || t.includes('phong trào') || t.includes('văn hóa') || t.includes('hồ chí minh') || c.includes('hoạt động') || c.includes('ngoại khóa');
+        }
+        if (noticeCategoryFilter === 'general') {
+          return notice.type === 'info' || (!t.includes('học tập') && !t.includes('khen'));
+        }
+
+        return true;
+      });
+  }, [state.boardNotices, noticeSearch, noticeCategoryFilter]);
+
   const handleSaveNotice = (
     title: string,
     content: string,
@@ -226,7 +276,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
     <div className="space-y-4 max-w-7xl mx-auto h-full flex flex-col pb-10 animate-fadeIn">
       {/* Student Welcome & Quick Actions Banner */}
       {!isTeacher && loggedStudent && (
-        <div className="bg-gradient-to-r from-[#8E2433] via-[#9E2837] to-[#721C28] rounded-3xl p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#8E2433]/30">
+        <div className="bg-gradient-to-r from-[#781C2B] via-[#922235] to-[#233146] rounded-3xl p-4 sm:p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-[#781C2B]/40">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-black text-lg shadow-inner overflow-hidden border border-white/30 text-white">
               {loggedStudent.avatar ? (
@@ -241,10 +291,10 @@ export const BoardView: React.FC<BoardViewProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]">
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]">
                   Học sinh Lớp {state.config.className}
                 </span>
-                <span className="text-xs text-[#FAF0EE] font-medium">Năm học {state.config.schoolYear}</span>
+                <span className="text-xs text-[#F5EDEB] font-medium">Năm học {state.config.schoolYear}</span>
               </div>
               <h2 className="text-base sm:text-lg font-black tracking-tight mt-0.5 uppercase drop-shadow-2xs">
                 {loggedStudent.name}
@@ -255,9 +305,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onSelectStudent(loggedStudent.id)}
-              className="px-4 py-2 bg-white text-[#8E2433] hover:bg-[#FFF8F3] font-bold rounded-xl text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap border border-[#EBC9B9]"
+              className="px-4 py-2 bg-[#F5EDEB] text-[#233146] hover:bg-white font-bold rounded-xl text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap border border-[#E8DEDA]"
             >
-              <UserCheck className="w-4 h-4 text-[#8E2433]" />
+              <UserCheck className="w-4 h-4 text-[#922235]" />
               <span>Xem Hồ sơ của tôi</span>
             </button>
           </div>
@@ -265,14 +315,14 @@ export const BoardView: React.FC<BoardViewProps> = ({
       )}
 
       {/* Tab Switcher at the top of Board */}
-      <div className="bg-white p-2 rounded-2xl shadow-xs border border-[#E9E2DF] flex items-center justify-between gap-2 overflow-x-auto shrink-0">
+      <div className="bg-white p-2 rounded-2xl shadow-xs border border-[#E8DEDA] flex items-center justify-between gap-2 overflow-x-auto shrink-0">
         <div className="flex gap-1.5">
           <button
             onClick={() => setBoardSubTab('notices')}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
               boardSubTab === 'notices'
-                ? 'bg-[#8E2433] text-white shadow-xs font-black'
-                : 'text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433]'
+                ? 'bg-[#922235] text-white shadow-xs font-black'
+                : 'text-[#233146] hover:bg-[#F5EDEB] hover:text-[#922235]'
             }`}
           >
             <Megaphone className="w-4 h-4" />
@@ -283,8 +333,8 @@ export const BoardView: React.FC<BoardViewProps> = ({
             onClick={() => setBoardSubTab('seating')}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
               boardSubTab === 'seating'
-                ? 'bg-[#8E2433] text-white shadow-xs font-black'
-                : 'text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433]'
+                ? 'bg-[#922235] text-white shadow-xs font-black'
+                : 'text-[#233146] hover:bg-[#F5EDEB] hover:text-[#922235]'
             }`}
           >
             <Grid3X3 className="w-4 h-4" />
@@ -295,8 +345,8 @@ export const BoardView: React.FC<BoardViewProps> = ({
             onClick={() => setBoardSubTab('rankings')}
             className={`px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
               boardSubTab === 'rankings'
-                ? 'bg-[#8E2433] text-white shadow-xs font-black'
-                : 'text-[#233044] hover:bg-[#FAF0EE] hover:text-[#8E2433]'
+                ? 'bg-[#922235] text-white shadow-xs font-black'
+                : 'text-[#233146] hover:bg-[#F5EDEB] hover:text-[#922235]'
             }`}
           >
             <Trophy className="w-4 h-4" />
@@ -310,7 +360,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
               setNoticeToEdit(null);
               setIsNoticeModalOpen(true);
             }}
-            className="px-4 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+            className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             <span>Đăng thông tin mới</span>
@@ -335,17 +385,17 @@ export const BoardView: React.FC<BoardViewProps> = ({
       {boardSubTab === 'notices' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
           {/* Announcements (2 Cols) */}
-          <div className="lg:col-span-2 bg-white rounded-3xl shadow-xs border border-gray-100 flex flex-col overflow-hidden h-full">
-            <div className="p-4 sm:p-5 border-b border-[#E9E2DF] bg-[#FAF0EE]/60 flex justify-between items-center shrink-0">
+          <div className="lg:col-span-2 bg-white rounded-3xl shadow-xs border border-[#E8DEDA] flex flex-col overflow-hidden h-full">
+            <div className="p-4 sm:p-5 border-b border-[#E8DEDA] bg-[#F5EDEB]/60 flex justify-between items-center shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] flex items-center justify-center shadow-2xs">
+                <div className="w-10 h-10 rounded-2xl bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shadow-2xs">
                   <Megaphone className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#233044] text-base">
+                  <h3 className="font-bold text-[#233146] text-base">
                     Trang thông tin &amp; Bảng tin Lớp {state.config.className}
                   </h3>
-                  <p className="text-xs text-[#6B7280]">
+                  <p className="text-xs text-[#697589]">
                     Các thông báo, kế hoạch và nhắc nhở từ GVCN đến lớp
                   </p>
                 </div>
@@ -372,21 +422,42 @@ export const BoardView: React.FC<BoardViewProps> = ({
                       new Date(b.date).getTime() - new Date(a.date).getTime()
                   )
                   .map((notice) => {
-                    let borderStyle = 'border-l-4 border-l-blue-500 bg-white border-gray-200';
-                    let icon = <Info className="w-4 h-4 text-blue-500" />;
-                    let tagBg = 'bg-blue-50 text-blue-700';
+                    const titleLower = (notice.title || '').toLowerCase();
+                    const contentLower = (notice.content || '').toLowerCase();
+                    const isCompetition =
+                      titleLower.includes('thi đua') || contentLower.includes('thi đua');
+                    const isReward =
+                      notice.type === 'success' ||
+                      titleLower.includes('khen') ||
+                      titleLower.includes('giải') ||
+                      titleLower.includes('thành tích') ||
+                      contentLower.includes('khen thưởng');
+                    const isWarning =
+                      notice.type === 'warning' ||
+                      titleLower.includes('nhắc nhở') ||
+                      titleLower.includes('chú ý') ||
+                      titleLower.includes('lưu ý');
+
+                    let borderStyle = 'border-l-4 border-l-[#922235] bg-white border-[#E8DEDA]';
+                    let icon = <Info className="w-4 h-4 text-[#922235]" />;
+                    let tagBg = 'bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA]';
                     let tagText = 'Thông tin';
 
-                    if (notice.type === 'warning') {
-                      borderStyle = 'border-l-4 border-l-amber-500 bg-white border-gray-200';
-                      icon = <AlertTriangle className="w-4 h-4 text-amber-500" />;
-                      tagBg = 'bg-amber-50 text-amber-700';
-                      tagText = 'Nhắc nhở';
-                    } else if (notice.type === 'success') {
-                      borderStyle = 'border-l-4 border-l-emerald-500 bg-white border-gray-200';
-                      icon = <Sparkles className="w-4 h-4 text-emerald-500" />;
-                      tagBg = 'bg-emerald-50 text-emerald-700';
+                    if (isCompetition) {
+                      borderStyle = 'border-l-4 border-l-[#781C2B] bg-white border-[#E8DEDA]';
+                      icon = <Trophy className="w-4 h-4 text-[#781C2B]" />;
+                      tagBg = 'bg-[#F5EDEB] text-[#781C2B] border border-[#E8DEDA]';
+                      tagText = 'Thi đua';
+                    } else if (isReward) {
+                      borderStyle = 'border-l-4 border-l-[#922235] bg-white border-[#E8DEDA]';
+                      icon = <Sparkles className="w-4 h-4 text-[#922235]" />;
+                      tagBg = 'bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]';
                       tagText = 'Khen thưởng';
+                    } else if (isWarning) {
+                      borderStyle = 'border-l-4 border-l-[#C0603A] bg-white border-[#E8DEDA]';
+                      icon = <AlertTriangle className="w-4 h-4 text-[#C0603A]" />;
+                      tagBg = 'bg-orange-50 text-[#C0603A] border border-orange-200';
+                      tagText = 'Nhắc nhở';
                     }
 
                     return (
@@ -397,7 +468,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
                           <div className="flex items-center gap-2 min-w-0">
                             {icon}
-                            <h4 className="font-bold text-gray-900 text-sm sm:text-base break-words">
+                            <h4 className="font-bold text-[#233146] text-sm sm:text-base break-words">
                               {notice.title}
                             </h4>
                           </div>
@@ -417,16 +488,16 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                     setNoticeToEdit(notice);
                                     setIsNoticeModalOpen(true);
                                   }}
-                                  className="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-blue-200/80 shadow-2xs"
+                                  className="px-2.5 py-1 rounded-lg bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#233146] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-[#E8DEDA] shadow-2xs"
                                   title="Chỉnh sửa hoặc thay đổi thông tin đã đăng"
                                 >
-                                  <Edit2 className="w-3.5 h-3.5" />
+                                  <Edit2 className="w-3.5 h-3.5 text-[#233146]" />
                                   <span>Thay đổi</span>
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setNoticeToDelete(notice.id)}
-                                  className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-red-200/80 shadow-2xs"
+                                  className="px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-[#922235] text-xs font-bold flex items-center gap-1 transition-colors cursor-pointer border border-rose-200/80 shadow-2xs"
                                   title="Xóa thông tin đã đăng"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -437,7 +508,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                           </div>
                         </div>
 
-                        <p className="text-xs sm:text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-xs sm:text-sm text-[#233146]/90 whitespace-pre-wrap leading-relaxed">
                           {notice.content}
                         </p>
 
@@ -615,7 +686,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                       {notice.videoName && (
                                         <div className="px-3.5 py-1.5 bg-slate-900 text-white text-[11px] font-semibold flex items-center justify-between border-b border-white/10">
                                           <span className="truncate max-w-xs sm:max-w-md flex items-center gap-1.5">
-                                            <Film className="w-3.5 h-3.5 text-[#38bdf8]" />
+                                            <Film className="w-3.5 h-3.5 text-[#EBC9B9]" />
                                             <span>{notice.videoName}</span>
                                           </span>
                                           {notice.videoSize && (
@@ -652,7 +723,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                         href={sanitizeUrl(notice.videoUrl)}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="px-3 py-1.5 bg-[#8E2433] hover:bg-[#721C28] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-2xs"
+                                        className="px-3 py-1.5 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer shadow-2xs"
                                       >
                                         <span>Xem video</span>
                                         <ExternalLink className="w-3.5 h-3.5" />
@@ -664,16 +735,16 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
                               {/* 3. Attached Web Link */}
                               {notice.linkUrl && (
-                                <div className="mt-3.5 p-3 rounded-2xl bg-[#FAF0EE]/60 border border-[#EBC9B9] flex items-center justify-between gap-3 hover:bg-[#FAF0EE] transition-colors">
+                                <div className="mt-3.5 p-3 rounded-2xl bg-[#F5EDEB]/60 border border-[#E8DEDA] flex items-center justify-between gap-3 hover:bg-[#F5EDEB] transition-colors">
                                   <div className="flex items-center gap-2.5 min-w-0">
-                                    <div className="w-9 h-9 rounded-xl bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] flex items-center justify-center shrink-0 shadow-2xs">
+                                    <div className="w-9 h-9 rounded-xl bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0 shadow-2xs">
                                       <ExternalLink className="w-4 h-4" />
                                     </div>
                                     <div className="min-w-0">
                                       <p className="text-xs font-black text-[#233044] truncate">
                                         {notice.linkTitle || extractDomain(notice.linkUrl)}
                                       </p>
-                                      <p className="text-[11px] text-[#8E2433] font-medium truncate">
+                                      <p className="text-[11px] text-[#922235] font-medium truncate">
                                         {notice.linkUrl}
                                       </p>
                                     </div>
@@ -682,7 +753,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                                     href={sanitizeUrl(notice.linkUrl)}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="px-3 py-1.5 bg-[#8E2433] hover:bg-[#721C28] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
+                                    className="px-3 py-1.5 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shrink-0 shadow-2xs transition-all cursor-pointer whitespace-nowrap"
                                   >
                                     <span>Mở liên kết</span>
                                     <ExternalLink className="w-3.5 h-3.5" />
@@ -693,11 +764,11 @@ export const BoardView: React.FC<BoardViewProps> = ({
                           );
                         })()}
 
-                        <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-400">
+                        <div className="mt-3 pt-2.5 border-t border-[#E8DEDA] flex items-center justify-between text-[11px] text-[#697589]">
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" /> Ngày đăng: {formatDisplayDate(notice.date)}
                           </span>
-                          <span className="font-bold text-[#8E2433]">GVCN Lớp {state.config.className}</span>
+                          <span className="font-bold text-[#922235]">GVCN Lớp {state.config.className}</span>
                         </div>
                       </div>
                     );
@@ -707,34 +778,34 @@ export const BoardView: React.FC<BoardViewProps> = ({
           </div>
 
           {/* Quick Honors Widget on right */}
-          <div className="bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-5 flex flex-col justify-between">
+          <div className="bg-white rounded-3xl shadow-xs border border-[#E8DEDA] p-5 flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#E9E2DF]">
+              <div className="flex items-center justify-between mb-3 pb-3 border-b border-[#E8DEDA]">
                 <div className="flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-[#8E2433]" />
+                  <GraduationCap className="w-5 h-5 text-[#922235]" />
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <h4 className="font-bold text-[#233044] text-sm">
+                      <h4 className="font-bold text-[#233146] text-sm">
                         TOP 5 HỌC TẬP
                       </h4>
                       <span
                         className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
                           isHonorsPublished
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-[#F5EDEB] text-[#781C2B] border-[#E8DEDA]'
                             : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}
                       >
                         {isHonorsPublished ? 'Đã công bố' : 'Bản nháp'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-[#6B7280]">
+                    <p className="text-[11px] text-[#697589]">
                       {monthDisplay} • ĐTB cao nhất
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => setBoardSubTab('rankings')}
-                  className="text-xs text-[#8E2433] font-bold hover:text-[#721C28] hover:underline cursor-pointer"
+                  className="text-xs text-[#922235] font-bold hover:text-[#781C2B] hover:underline cursor-pointer"
                 >
                   Xem bảng vàng
                 </button>
@@ -750,7 +821,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                   </p>
                 </div>
               ) : topAcademicStudents.length === 0 ? (
-                <p className="text-xs text-[#6B7280] italic text-center py-6">
+                <p className="text-xs text-[#697589] italic text-center py-6">
                   Chưa có dữ liệu học tập để xếp hạng
                 </p>
               ) : (
@@ -759,20 +830,20 @@ export const BoardView: React.FC<BoardViewProps> = ({
                     <li
                       key={s.studentId}
                       onClick={() => onSelectStudent(s.studentId, selectedMonth)}
-                      className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF0EE]/60 hover:bg-[#FAF0EE] border border-[#E9E2DF] transition-colors cursor-pointer"
+                      className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FFF8F4] hover:bg-[#F5EDEB] border border-[#E8DEDA] transition-colors cursor-pointer"
                     >
-                      <div className="w-6 h-6 rounded-full bg-amber-400 text-amber-950 font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                      <div className="w-6 h-6 rounded-full bg-[#922235] text-white font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
                         {s.rank}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="text-xs font-bold text-[#233044] uppercase block leading-tight truncate">
+                        <span className="text-xs font-bold text-[#233146] uppercase block leading-tight truncate">
                           {s.name}
                         </span>
-                        <span className="text-[10px] text-[#6B7280] block truncate">
+                        <span className="text-[10px] text-[#697589] block truncate">
                           {s.validSubjectsCount} môn có điểm
                         </span>
                       </div>
-                      <span className="text-xs font-black text-[#8E2433] bg-[#FAF0EE] px-2 py-0.5 rounded-md border border-[#EBC9B9] shrink-0">
+                      <span className="text-xs font-black text-[#922235] bg-[#F5EDEB] px-2 py-0.5 rounded-md border border-[#E8DEDA] shrink-0">
                         ĐTB: {s.formattedAverage}
                       </span>
                     </li>
@@ -781,16 +852,16 @@ export const BoardView: React.FC<BoardViewProps> = ({
               )}
             </div>
 
-            <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-[#8E2433] via-[#9E2837] to-[#721C28] text-white shadow-md border border-[#8E2433]/30">
+            <div className="mt-6 p-4 rounded-2xl bg-gradient-to-br from-[#781C2B] via-[#922235] to-[#233146] text-white shadow-md border border-[#781C2B]/40">
               <p className="font-bold text-xs uppercase mb-1">
                 Sơ đồ chỗ ngồi lớp
               </p>
-              <p className="text-[11px] text-[#FAF0EE] leading-relaxed">
+              <p className="text-[11px] text-white/80 leading-relaxed">
                 Đã xếp vị trí bàn học cho {state.students.length} học sinh trong lớp.
               </p>
               <button
                 onClick={() => setBoardSubTab('seating')}
-                className="mt-3 px-3 py-2 bg-white text-[#8E2433] hover:bg-[#FAF0EE] font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors w-full"
+                className="mt-3 px-3 py-2 bg-white text-[#922235] hover:bg-[#FFF8F4] font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors w-full"
               >
                 Mở sơ đồ chỗ ngồi
               </button>
@@ -801,17 +872,17 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
       {/* VIEW 3: RANKINGS (FULL) */}
       {boardSubTab === 'rankings' && (
-        <div className="bg-white rounded-3xl shadow-xs border border-gray-100 p-6 flex flex-col space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-gray-100 pb-4">
+        <div className="bg-white rounded-3xl shadow-xs border border-[#E8DEDA] p-6 flex flex-col space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#E8DEDA] pb-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center">
                 <Trophy className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900 text-base">
+                <h3 className="font-bold text-[#233146] text-base">
                   Bảng Vàng Vinh Danh &amp; Thi Đua Rèn Luyện
                 </h3>
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-[#697589]">
                   Thống kê kết quả thi đua theo tháng
                 </p>
               </div>
@@ -822,14 +893,14 @@ export const BoardView: React.FC<BoardViewProps> = ({
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 bg-white cursor-pointer outline-none focus:ring-2 focus:ring-blue-500 shadow-2xs"
+                className="border border-[#E8DEDA] rounded-xl px-3 py-2 text-xs font-bold text-[#233146] bg-white cursor-pointer outline-none focus:ring-2 focus:ring-[#922235] shadow-2xs"
               />
               <button
                 onClick={handleCelebrate}
-                className="px-3.5 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E8DEDA]"
                 title="Bắn pháo hoa chúc mừng"
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <Sparkles className="w-3.5 h-3.5 text-[#922235]" />
                 <span>Chúc mừng</span>
               </button>
             </div>
@@ -837,13 +908,13 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* TOP 5 HỌC TẬP */}
-            <div className="bg-[#FAF0EE]/50 rounded-2xl p-5 border border-[#EBC9B9]">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#EBC9B9]/70">
+            <div className="bg-[#F5EDEB]/50 rounded-2xl p-5 border border-[#E8DEDA]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-[#E8DEDA]/70">
                 <div>
-                  <h4 className="text-xs font-black text-[#8E2433] uppercase tracking-wider flex items-center gap-2">
-                    <GraduationCap className="w-4 h-4 text-[#8E2433]" /> TOP 5 HỌC TẬP
+                  <h4 className="text-xs font-black text-[#922235] uppercase tracking-wider flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-[#922235]" /> TOP 5 HỌC TẬP
                   </h4>
-                  <p className="text-[11px] text-[#6B7280] mt-0.5">
+                  <p className="text-[11px] text-[#697589] mt-0.5">
                     {monthDisplay} • Năm học {state.config.schoolYear}
                   </p>
                 </div>
@@ -852,7 +923,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                   <span
                     className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                       isHonorsPublished
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                        ? 'bg-[#F5EDEB] text-[#781C2B] border-[#E8DEDA]'
                         : 'bg-amber-100 text-amber-800 border-amber-300'
                     }`}
                   >
@@ -863,7 +934,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                     <button
                       type="button"
                       onClick={() => onPublishHonors(selectedMonth)}
-                      className="px-2.5 py-1 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer flex items-center gap-1 transition-all"
+                      className="px-2.5 py-1 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-lg text-xs shadow-xs cursor-pointer flex items-center gap-1 transition-all"
                     >
                       <Trophy className="w-3 h-3" />
                       <span>{isHonorsPublished ? 'Cập nhật công bố' : 'Công bố vinh danh'}</span>
@@ -882,7 +953,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
                   </p>
                 </div>
               ) : topAcademicStudents.length === 0 ? (
-                <p className="text-xs text-[#6B7280] italic text-center py-8">
+                <p className="text-xs text-[#697589] italic text-center py-8">
                   Chưa có dữ liệu học tập để xếp hạng
                 </p>
               ) : (
@@ -891,12 +962,12 @@ export const BoardView: React.FC<BoardViewProps> = ({
                     <li
                       key={s.studentId}
                       onClick={() => onSelectStudent(s.studentId, selectedMonth)}
-                      className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#E9E2DF] shadow-2xs hover:shadow-xs transition-shadow cursor-pointer"
+                      className="flex items-center gap-3 bg-white p-3 rounded-xl border border-[#E8DEDA] shadow-2xs hover:shadow-xs transition-shadow cursor-pointer"
                     >
-                      <div className="w-7 h-7 rounded-full bg-amber-400 text-amber-950 font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                      <div className="w-7 h-7 rounded-full bg-[#922235] text-white font-black flex items-center justify-center text-xs shrink-0 shadow-2xs">
                         {s.rank}
                       </div>
-                      <div className="w-8 h-8 rounded-lg bg-[#FAF0EE] text-[#8E2433] border border-[#E9E2DF] flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center text-xs font-bold shrink-0">
                         {s.avatar ? (
                           <img src={s.avatar} alt="" className="w-full h-full object-cover rounded-lg" />
                         ) : (
@@ -907,16 +978,16 @@ export const BoardView: React.FC<BoardViewProps> = ({
                         <span className="text-xs sm:text-sm font-bold text-[#233044] uppercase block truncate leading-tight">
                           {s.name}
                         </span>
-                        <div className="flex items-center gap-2 text-[10px] text-[#6B7280]">
+                        <div className="flex items-center gap-2 text-[10px] text-[#697589]">
                           <span className="font-mono">Mã HS: {s.studentId}</span>
                           <span>•</span>
-                          <span className="text-[#8E2433] font-medium">
+                          <span className="text-[#922235] font-medium">
                             {s.validSubjectsCount} môn có điểm
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-[#8E2433] bg-[#FAF0EE] px-2.5 py-1 rounded-lg border border-[#EBC9B9] shadow-2xs">
+                        <span className="text-xs font-black text-[#922235] bg-[#F5EDEB] px-2.5 py-1 rounded-lg border border-[#E8DEDA] shadow-2xs">
                           ĐTB: {s.formattedAverage}
                         </span>
                       </div>
@@ -927,9 +998,9 @@ export const BoardView: React.FC<BoardViewProps> = ({
             </div>
 
             {/* Cần cố gắng hơn */}
-            <div className="bg-red-50/40 rounded-2xl p-5 border border-red-100">
-              <h4 className="text-xs font-black text-red-800 uppercase tracking-wider mb-4 flex items-center gap-2">
-                <ArrowDown className="w-4 h-4 text-red-600" /> Cần Cố Gắng Hơn (Điểm thi đua còn lại thấp)
+            <div className="bg-rose-50/40 rounded-2xl p-5 border border-rose-100">
+              <h4 className="text-xs font-black text-rose-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <ArrowDown className="w-4 h-4 text-rose-600" /> Cần Cố Gắng Hơn (Điểm thi đua còn lại thấp)
               </h4>
 
               {bottomStudents.length === 0 ? (
@@ -942,24 +1013,24 @@ export const BoardView: React.FC<BoardViewProps> = ({
                     <li
                       key={s.id}
                       onClick={() => onSelectStudent(s.id)}
-                      className="flex items-center gap-3 bg-white p-3 rounded-xl border border-red-100 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer"
+                      className="flex items-center gap-3 bg-white p-3 rounded-xl border border-rose-100 shadow-2xs hover:shadow-xs transition-shadow cursor-pointer"
                     >
-                      <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 font-black flex items-center justify-center text-xs">
+                      <div className="w-7 h-7 rounded-full bg-rose-100 text-rose-700 font-black flex items-center justify-center text-xs">
                         !
                       </div>
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA] flex items-center justify-center text-xs font-bold shrink-0">
                         {s.name.charAt(0)}
                       </div>
-                      <span className="text-xs sm:text-sm font-bold text-gray-900 uppercase flex-1 break-words leading-tight">
+                      <span className="text-xs sm:text-sm font-bold text-[#233044] uppercase flex-1 break-words leading-tight">
                         {s.name}
                       </span>
                       <div className="flex items-center gap-2">
                         {s.totalMinus > 0 && (
-                          <span className="text-[11px] font-bold text-red-500 hidden sm:inline">
+                          <span className="text-[11px] font-bold text-rose-500 hidden sm:inline">
                             -{s.totalMinus}đ vi phạm
                           </span>
                         )}
-                        <span className="text-xs font-black text-red-600 bg-red-50 px-2.5 py-1 rounded-md border border-red-200">
+                        <span className="text-xs font-black text-rose-600 bg-rose-50 px-2.5 py-1 rounded-md border border-rose-200">
                           Còn {s.points}đ
                         </span>
                       </div>

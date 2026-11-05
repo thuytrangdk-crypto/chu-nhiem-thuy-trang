@@ -47,20 +47,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   return (
     <div className="space-y-4 max-w-7xl mx-auto h-full flex flex-col pb-10 animate-fadeIn">
       {/* Top Bar: Date picker & Actions (Wrapped & Responsive) */}
-      <div className="bg-white p-3.5 sm:p-4 rounded-3xl shadow-xs border border-[#E9E2DF] shrink-0">
+      <div className="bg-white p-3.5 sm:p-4 rounded-3xl shadow-xs border border-[#E8DEDA] shrink-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           {/* Left: Date picker */}
           <div className="flex items-center gap-2.5">
             <div className="relative flex items-center">
-              <Calendar className="w-4 h-4 absolute left-3.5 text-[#8E2433] pointer-events-none" />
+              <Calendar className="w-4 h-4 absolute left-3.5 text-[#922235] pointer-events-none" />
               <input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="pl-10 pr-3 py-2 bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-xl font-bold text-xs sm:text-sm text-[#233044] focus:outline-none focus:ring-2 focus:ring-[#8E2433] focus:border-[#8E2433] cursor-pointer"
+                className="pl-10 pr-3 py-2 bg-[#FFF8F4]/60 border border-[#E8DEDA] rounded-xl font-bold text-xs sm:text-sm text-[#233146] focus:outline-none focus:ring-2 focus:ring-[#922235] focus:border-[#922235] cursor-pointer"
               />
             </div>
-            <span className="text-xs text-[#6B7280] hidden sm:inline">
+            <span className="text-xs text-[#697589] hidden sm:inline">
               Chọn ngày điểm danh
             </span>
           </div>
@@ -70,7 +70,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             <span className="px-2.5 py-1.5 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200">
               Có mặt: <strong>{presentCount}</strong>
             </span>
-            <span className="px-2.5 py-1.5 bg-[#FAF0EE] text-[#8E2433] rounded-xl border border-[#EBC9B9]">
+            <span className="px-2.5 py-1.5 bg-[#F5EDEB] text-[#922235] rounded-xl border border-[#E8DEDA]">
               Có phép: <strong>{permissionCount}</strong>
             </span>
             <span className="px-2.5 py-1.5 bg-rose-50 text-rose-700 rounded-xl border border-rose-200">
@@ -96,14 +96,14 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <button
                   type="button"
                   onClick={onSaveNotice}
-                  className="px-4 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-[#8E2433]/25 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md hover:shadow-[#922235]/25 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Lưu điểm danh</span>
                 </button>
               </>
             ) : (
-              <div className="px-3.5 py-2 bg-[#FAF0EE] text-[#8E2433] border border-[#E9E2DF] rounded-xl font-bold text-xs">
+              <div className="px-3.5 py-2 bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] rounded-xl font-bold text-xs">
                 Chế độ theo dõi chuyên cần lớp
               </div>
             )}
@@ -112,7 +112,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       </div>
 
       {/* Student attendance grid */}
-      <div className="flex-1 overflow-y-auto bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-4 sm:p-6 relative">
+      <div className="flex-1 overflow-y-auto bg-white rounded-3xl shadow-xs border border-[#E8DEDA] p-4 sm:p-6 relative">
         {state.students.length === 0 ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
             <UserX className="w-16 h-16 text-gray-200 mb-3" />
@@ -146,7 +146,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   className={`border rounded-2xl p-3.5 flex flex-col justify-between transition-colors ${
                     isSelf
                       ? 'bg-emerald-50/50 border-emerald-300 ring-2 ring-emerald-200/60'
-                      : 'bg-[#FFF8F3]/40 border-[#E9E2DF] hover:border-[#8E2433]/40'
+                      : 'bg-[#FFF8F4]/40 border-[#E8DEDA] hover:border-[#922235]/40'
                   }`}
                 >
                   <div
@@ -154,7 +154,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     className="flex items-center gap-3 mb-3 cursor-pointer group"
                   >
                     <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm shrink-0 overflow-hidden ${
-                      isSelf ? 'bg-emerald-100 text-emerald-800' : 'bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]'
+                      isSelf ? 'bg-emerald-100 text-emerald-800' : 'bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]'
                     }`}>
                       {student.avatar ? (
                         <img
@@ -167,7 +167,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-[#233044] group-hover:text-[#8E2433] transition-colors text-xs sm:text-sm uppercase flex items-center gap-1.5 flex-wrap break-words leading-snug">
+                      <p className="font-bold text-[#233146] group-hover:text-[#922235] transition-colors text-xs sm:text-sm uppercase flex items-center gap-1.5 flex-wrap break-words leading-snug">
                         <span>{student.name}</span>
                         {!isTeacher && isSelf && (
                           <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold">
@@ -175,7 +175,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                           </span>
                         )}
                       </p>
-                      <p className="text-[11px] text-[#6B7280] font-mono">
+                      <p className="text-[11px] text-[#697589] font-mono">
                         ID: {student.id}
                       </p>
                     </div>
@@ -195,7 +195,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       } ${
                         currentStatus === 'c'
                           ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300'
-                          : 'bg-white text-gray-500 border border-[#E9E2DF] opacity-60'
+                          : 'bg-white text-gray-500 border border-[#E8DEDA] opacity-60'
                       }`}
                     >
                       <Check className="w-3.5 h-3.5 mb-0.5" />
@@ -213,8 +213,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                         isTeacher ? 'cursor-pointer' : 'cursor-default'
                       } ${
                         currentStatus === 'v'
-                          ? 'bg-[#8E2433] text-white shadow-sm ring-2 ring-[#EBC9B9]'
-                          : 'bg-white text-gray-500 border border-[#E9E2DF] opacity-60'
+                          ? 'bg-[#922235] text-white shadow-sm ring-2 ring-[#E8DEDA]'
+                          : 'bg-white text-gray-500 border border-[#E8DEDA] opacity-60'
                       }`}
                     >
                       <Mail className="w-3.5 h-3.5 mb-0.5" />
@@ -233,7 +233,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       } ${
                         currentStatus === 'kp'
                           ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-300'
-                          : 'bg-white text-gray-500 border border-[#E9E2DF] opacity-60'
+                          : 'bg-white text-gray-500 border border-[#E8DEDA] opacity-60'
                       }`}
                     >
                       <XIcon className="w-3.5 h-3.5 mb-0.5" />
@@ -252,7 +252,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                       } ${
                         currentStatus === 'm'
                           ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300'
-                          : 'bg-white text-gray-500 border border-[#E9E2DF] opacity-60'
+                          : 'bg-white text-gray-500 border border-[#E8DEDA] opacity-60'
                       }`}
                     >
                       <Clock className="w-3.5 h-3.5 mb-0.5" />

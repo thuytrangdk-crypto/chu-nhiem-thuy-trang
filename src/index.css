@@ -1,52 +1,57 @@
 @import "tailwindcss";
 
 :root {
-  /* Luxury Education Dashboard – Ruby Red & Warm Ivory */
-  --color-ruby: #8E2433;
-  --color-ruby-dark: #751c28;
-  --color-ruby-hover: #9f2a3a;
-  --color-ruby-light: #FAF0EE;
-  --color-ivory: #FFF8F3;
+  /* Luxury Education Dashboard – 6A5 Navy & Wine Red Theme */
+  --color-navy: #233146;
+  --color-ruby: #922235;
+  --color-ruby-dark: #781C2B;
+  --color-ruby-hover: #A3283D;
+  --color-ruby-light: #F5EDEB;
+  --color-ivory: #FFF8F4;
   --color-card: #FFFFFF;
   --color-nude: #EBC9B9;
-  --color-nude-light: #F7EAE3;
-  --color-navy: #233044;
-  --color-gray-subtle: #6B7280;
-  --color-border: #E9E2DF;
+  --color-nude-light: #F5EDEB;
+  --color-slate: #697589;
+  --color-gray-subtle: #697589;
+  --color-border: #E8DEDA;
 
-  /* Backward-compatible variables re-mapped to Ruby & Warm Ivory */
-  --color-sky-light: #FAF0EE;
+  /* Backward-compatible variables re-mapped to Wine Red & Warm Ivory */
+  --color-sky-light: #F5EDEB;
   --color-sky-accent: #EBC9B9;
-  --color-sky-primary: #8E2433;
-  --color-sky-dark: #751c28;
+  --color-sky-primary: #922235;
+  --color-sky-dark: #781C2B;
 
   font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
-  color: #233044;
-  background-color: #FFF8F3;
+  color: #233146;
+  background-color: #FFF8F4;
 }
 
 body {
   font-family: 'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif;
-  color: #233044;
-  background-color: #FFF8F3;
+  color: #233146;
+  background-color: #FFF8F4;
   -webkit-font-smoothing: antialiased;
 }
 
 /* Luxury Palette Utility Classes */
+.bg-navy {
+  background-color: #233146;
+}
+
 .bg-ruby {
-  background-color: #8E2433;
+  background-color: #922235;
 }
 
 .bg-ruby-dark {
-  background-color: #751c28;
+  background-color: #781C2B;
 }
 
 .bg-ruby-light {
-  background-color: #FAF0EE;
+  background-color: #F5EDEB;
 }
 
 .bg-ivory {
-  background-color: #FFF8F3;
+  background-color: #FFF8F4;
 }
 
 .bg-nude {
@@ -54,23 +59,31 @@ body {
 }
 
 .bg-nude-light {
-  background-color: #F7EAE3;
-}
-
-.text-ruby {
-  color: #8E2433;
+  background-color: #F5EDEB;
 }
 
 .text-navy {
-  color: #233044;
+  color: #233146;
+}
+
+.text-ruby {
+  color: #922235;
+}
+
+.text-ruby-dark {
+  color: #781C2B;
 }
 
 .text-subtle {
-  color: #6B7280;
+  color: #697589;
+}
+
+.border-navy {
+  border-color: #233146;
 }
 
 .border-ruby {
-  border-color: #8E2433;
+  border-color: #922235;
 }
 
 .border-nude {
@@ -78,12 +91,12 @@ body {
 }
 
 .border-subtle {
-  border-color: #E9E2DF;
+  border-color: #E8DEDA;
 }
 
 /* Re-mapped legacy classes for seamless whole-app harmony */
 .bg-sky-pastel {
-  background-color: #FAF0EE;
+  background-color: #F5EDEB;
 }
 
 .bg-sky-accent {
@@ -91,11 +104,11 @@ body {
 }
 
 .border-sky-accent {
-  border-color: #EBC9B9;
+  border-color: #E8DEDA;
 }
 
 .border-sky-pastel {
-  border-color: #FAF0EE;
+  border-color: #F5EDEB;
 }
 
 @keyframes fadeIn {
@@ -139,9 +152,9 @@ body {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #8E2433;
+  background: #922235;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: #751c28;
+  background: #781C2B;
 }

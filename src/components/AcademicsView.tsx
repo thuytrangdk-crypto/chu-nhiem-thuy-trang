@@ -359,25 +359,25 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           {/* Left: Title + Badges + Note hint */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="w-7 h-7 rounded-lg bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-7 h-7 rounded-lg bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0 shadow-xs">
               <BookOpen className="w-4 h-4" />
             </div>
-            <h2 className="text-xs sm:text-sm font-black text-[#233044] tracking-tight uppercase whitespace-nowrap">
+            <h2 className="text-xs sm:text-sm font-black text-[#233146] tracking-tight uppercase whitespace-nowrap">
               BẢNG ĐIỂM HỌC TẬP
             </h2>
-            <span className="px-2 py-0.5 rounded-md bg-[#FAF0EE] text-[#8E2433] font-black text-[11px] border border-[#EBC9B9]">
+            <span className="px-2 py-0.5 rounded-md bg-[#F5EDEB] text-[#922235] font-black text-[11px] border border-[#E8DEDA]">
               Lớp {className}
             </span>
-            <span className="px-2 py-0.5 rounded-md bg-white text-[#6B7280] font-bold text-[11px] border border-[#E9E2DF]">
+            <span className="px-2 py-0.5 rounded-md bg-white text-[#697589] font-bold text-[11px] border border-[#E8DEDA]">
               Năm học {schoolYear}
             </span>
 
             {/* Note badge with info tooltip */}
             <span
-              className="hidden lg:inline-flex items-center gap-1 text-[11px] text-[#6B7280] pl-2 border-l border-[#E9E2DF]"
+              className="hidden lg:inline-flex items-center gap-1 text-[11px] text-[#697589] pl-2 border-l border-[#E8DEDA]"
               title="Ghi chú: Trung bình cộng các môn theo tháng phục vụ theo dõi nội bộ, không gán thành kết quả học kỳ chính thức."
             >
-              <Info className="w-3.5 h-3.5 text-[#8E2433] shrink-0" />
+              <Info className="w-3.5 h-3.5 text-[#922235] shrink-0" />
               <span className="truncate max-w-xs xl:max-w-md">
                 ĐTB theo tháng theo dõi nội bộ
               </span>
@@ -401,8 +401,8 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                   }}
                   className={`px-2 py-0.5 rounded-lg text-[11px] font-extrabold transition-all cursor-pointer ${
                     isSel
-                      ? 'bg-[#8E2433] text-white shadow-2xs font-black'
-                      : 'bg-[#FAF0EE] text-[#233044] hover:bg-[#F5E5E0] border border-[#E9E2DF]'
+                      ? 'bg-[#922235] text-white shadow-2xs font-black'
+                      : 'bg-[#F5EDEB] text-[#233146] hover:bg-[#E8DEDA] border border-[#E8DEDA]'
                   }`}
                   title={`Xem điểm tháng ${Number(mM)}/${mY}`}
                 >
@@ -412,17 +412,17 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
             })}
 
             {/* Month input with arrows */}
-            <div className="flex items-center bg-white px-1 py-0.5 rounded-xl border border-[#E9E2DF] shadow-2xs focus-within:border-[#8E2433]">
+            <div className="flex items-center bg-white px-1 py-0.5 rounded-xl border border-[#E8DEDA] shadow-2xs focus-within:border-[#922235]">
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                className="p-1 rounded-lg hover:bg-[#FAF0EE] text-[#6B7280] hover:text-[#233044] transition-colors cursor-pointer"
+                className="p-1 rounded-lg hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] transition-colors cursor-pointer"
                 title="Tháng trước"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
               </button>
               <div className="flex items-center gap-1 px-1">
-                <Calendar className="w-3.5 h-3.5 text-[#8E2433] shrink-0" />
+                <Calendar className="w-3.5 h-3.5 text-[#922235] shrink-0" />
                 <input
                   type="month"
                   value={selectedMonth}
@@ -433,13 +433,13 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                       setHasUnsavedChanges(false);
                     }
                   }}
-                  className="bg-transparent text-xs font-black text-[#233044] outline-none cursor-pointer w-23"
+                  className="bg-transparent text-xs font-black text-[#233146] outline-none cursor-pointer w-23"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleNextMonth}
-                className="p-1 rounded-lg hover:bg-[#FAF0EE] text-[#6B7280] hover:text-[#233044] transition-colors cursor-pointer"
+                className="p-1 rounded-lg hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] transition-colors cursor-pointer"
                 title="Tháng sau"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
@@ -471,7 +471,7 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                 onClick={() => onPublishHonors(selectedMonth)}
                 className={`px-2.5 py-1 font-bold rounded-lg text-[11px] shadow-2xs flex items-center gap-1 transition-all ${
                   hasGradesInSelectedMonth
-                    ? 'bg-[#8E2433] hover:bg-[#721C28] text-white cursor-pointer'
+                    ? 'bg-[#922235] hover:bg-[#781C2B] text-white cursor-pointer'
                     : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
                 }`}
                 title={
@@ -488,16 +488,16 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
         </div>
 
         {/* ROW 2: Search + Action Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1 border-t border-[#E9E2DF]">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1 border-t border-[#E8DEDA]">
           {/* Search */}
           <div className="relative flex-1 sm:max-w-xs md:max-w-sm">
-            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#6B7280]" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-[#697589]" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Tìm theo tên học sinh, mã hồ sơ..."
-              className="w-full pl-8 pr-3 py-1.5 bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-lg text-xs font-medium text-[#233044] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#8E2433] focus:border-[#8E2433]"
+              className="w-full pl-8 pr-3 py-1.5 bg-[#FFF8F4]/60 border border-[#E8DEDA] rounded-lg text-xs font-medium text-[#233146] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#922235] focus:border-[#922235]"
             />
           </div>
 
@@ -515,10 +515,10 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                     subjects
                   )
                 }
-                className="px-2.5 py-1.5 bg-white hover:bg-[#FAF0EE] text-[#233044] font-bold rounded-lg text-[11px] border border-[#E9E2DF] hover:border-[#EBC9B9] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                className="px-2.5 py-1.5 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold rounded-lg text-[11px] border border-[#E8DEDA] hover:border-[#E8DEDA] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                 title="Tải mẫu Excel đã điền sẵn danh sách học sinh của lớp"
               >
-                <Download className="w-3 h-3 text-[#8E2433]" />
+                <Download className="w-3 h-3 text-[#922235]" />
                 <span>Tải mẫu Excel</span>
               </button>
 
@@ -542,7 +542,7 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                     effectiveGrades
                   )
                 }
-                className="px-2.5 py-1.5 bg-white hover:bg-[#FAF0EE] text-[#233044] font-bold rounded-lg text-[11px] border border-[#E9E2DF] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                className="px-2.5 py-1.5 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold rounded-lg text-[11px] border border-[#E8DEDA] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                 title="Xuất bảng điểm tháng hiện tại ra Excel"
               >
                 <Download className="w-3 h-3 text-emerald-600" />
@@ -552,10 +552,10 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSubjectModalOpen(true)}
-                className="px-2.5 py-1.5 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] font-bold rounded-lg text-[11px] border border-[#EBC9B9] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
+                className="px-2.5 py-1.5 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] font-bold rounded-lg text-[11px] border border-[#E8DEDA] flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
                 title="Thêm bớt môn học hoặc chọn môn nhận xét"
               >
-                <Settings className="w-3 h-3 text-[#8E2433]" />
+                <Settings className="w-3 h-3 text-[#922235]" />
                 <span>Cấu hình môn</span>
               </button>
 
@@ -601,7 +601,7 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                 <button
                   type="button"
                   onClick={handleSaveDirectEdits}
-                  className="px-3 py-1.5 bg-[#8E2433] hover:bg-[#721C28] text-white font-black rounded-lg text-[11px] shadow-sm flex items-center gap-1 cursor-pointer animate-pulse"
+                  className="px-3 py-1.5 bg-[#922235] hover:bg-[#781C2B] text-white font-black rounded-lg text-[11px] shadow-sm flex items-center gap-1 cursor-pointer animate-pulse"
                 >
                   <Save className="w-3 h-3" />
                   <span>Lưu thay đổi</span>
@@ -674,7 +674,7 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                 <th className="px-2 py-2 text-center min-w-[85px] border-r border-gray-100">
                   Số môn
                 </th>
-                <th className="px-3 py-2 text-center min-w-[110px] bg-[#FAF0EE] text-[#8E2433] border-r border-[#E9E2DF]">
+                <th className="px-3 py-2 text-center min-w-[110px] bg-[#F5EDEB] text-[#922235] border-r border-[#E8DEDA]">
                   Trung bình cộng
                 </th>
                 <th className="px-2 py-2 text-center w-18">
@@ -702,35 +702,35 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                     <tr
                       key={studentId}
                       className={`group transition-colors ${
-                        isLogged ? 'bg-[#FAF0EE]/60' : 'hover:bg-[#FFF8F3]'
+                        isLogged ? 'bg-[#F5EDEB]/60' : 'hover:bg-[#FFF8F4]'
                       }`}
                     >
                       {/* Sticky Left STT */}
                       <td
                         className={`px-2 py-1 text-center font-bold text-gray-500 w-11 min-w-[44px] max-w-[44px] sticky left-0 z-10 border-r border-gray-100 transition-colors ${
-                          isLogged ? 'bg-[#FAF0EE] group-hover:bg-[#FAF0EE]' : 'bg-white group-hover:bg-[#FFF8F3]'
+                          isLogged ? 'bg-[#F5EDEB] group-hover:bg-[#F5EDEB]' : 'bg-white group-hover:bg-[#FFF8F4]'
                         }`}
                       >
                         {studentSummary.stt}
                       </td>
                       {/* Sticky Left Mã hồ sơ */}
                       <td
-                        className={`px-2.5 py-1 font-mono font-bold text-[#233044] w-24 min-w-[96px] max-w-[96px] sticky left-[44px] z-10 border-r border-gray-100 transition-colors ${
-                          isLogged ? 'bg-[#FAF0EE] group-hover:bg-[#FAF0EE]' : 'bg-white group-hover:bg-[#FFF8F3]'
+                        className={`px-2.5 py-1 font-mono font-bold text-[#233146] w-24 min-w-[96px] max-w-[96px] sticky left-[44px] z-10 border-r border-gray-100 transition-colors ${
+                          isLogged ? 'bg-[#F5EDEB] group-hover:bg-[#F5EDEB]' : 'bg-white group-hover:bg-[#FFF8F4]'
                         }`}
                       >
                         {studentId}
                       </td>
                       {/* Sticky Left Họ và tên */}
                       <td
-                        className={`px-3 py-1 min-w-[180px] max-w-[200px] sticky left-[140px] z-10 border-r-2 border-[#E9E2DF] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors ${
-                          isLogged ? 'bg-[#FAF0EE] group-hover:bg-[#FAF0EE]' : 'bg-white group-hover:bg-[#FFF8F3]'
+                        className={`px-3 py-1 min-w-[180px] max-w-[200px] sticky left-[140px] z-10 border-r-2 border-[#E8DEDA] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.06)] transition-colors ${
+                          isLogged ? 'bg-[#F5EDEB] group-hover:bg-[#F5EDEB]' : 'bg-white group-hover:bg-[#FFF8F4]'
                         }`}
                       >
                         <button
                           type="button"
                           onClick={() => onSelectStudent?.(studentId, selectedMonth)}
-                          className="font-bold text-[#233044] hover:text-[#8E2433] hover:underline uppercase text-left cursor-pointer truncate max-w-[175px] block leading-tight"
+                          className="font-bold text-[#233146] hover:text-[#922235] hover:underline uppercase text-left cursor-pointer truncate max-w-[175px] block leading-tight"
                           title={`Xem chi tiết hồ sơ ${studentSummary.name}`}
                         >
                           {studentSummary.name}
@@ -768,11 +768,11 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                                     ? 'bg-amber-50 border-amber-400 text-amber-900'
                                     : isEval
                                     ? 'bg-gray-50 border-gray-200 text-gray-700'
-                                    : 'bg-white border-[#E9E2DF] text-[#233044] hover:border-[#8E2433]/40 focus:border-[#8E2433] focus:ring-1 focus:ring-[#8E2433]'
+                                    : 'bg-white border-[#E8DEDA] text-[#233146] hover:border-[#922235]/40 focus:border-[#922235] focus:ring-1 focus:ring-[#922235]'
                                 }`}
                               />
                             ) : (
-                              <span className="font-bold text-[#233044]">
+                              <span className="font-bold text-[#233146]">
                                 {displayVal || '-'}
                               </span>
                             )}
@@ -786,9 +786,9 @@ export const AcademicsView: React.FC<AcademicsViewProps> = ({
                       </td>
 
                       {/* Average GPA */}
-                      <td className="px-2 py-1 text-center bg-[#FAF0EE]/40 border-r border-[#E9E2DF]">
+                      <td className="px-2 py-1 text-center bg-[#F5EDEB]/40 border-r border-[#E8DEDA]">
                         {studentSummary.rawAverage !== null ? (
-                          <span className="inline-block px-2 py-0.5 rounded bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] font-black text-xs">
+                          <span className="inline-block px-2 py-0.5 rounded bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] font-black text-xs">
                             {studentSummary.formattedAverage}
                           </span>
                         ) : (

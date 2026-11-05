@@ -22,6 +22,7 @@ export interface AppConfig {
   appName: string;
   className: string;
   schoolYear: string;
+  schoolName?: string;
   teacherName: string;
   teacherPassword: string;
   classAvatar: string;

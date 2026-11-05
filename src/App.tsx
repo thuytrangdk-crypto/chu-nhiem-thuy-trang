@@ -1183,30 +1183,30 @@ export default function App() {
 
           <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
             {/* Slim mobile-only bar to open drawer (strictly on mobile, hidden on md+) */}
-            <div className="md:hidden h-11 bg-white border-b border-[#E9E2DF] flex items-center justify-between px-3 shrink-0 z-20">
+            <div className="md:hidden h-11 bg-[#233146] border-b border-[#1B2737] flex items-center justify-between px-3 shrink-0 z-20 text-white">
               <button
                 type="button"
                 onClick={() => setIsMobileSidebarOpen(true)}
-                className="p-1.5 -ml-1 text-[#233044] hover:bg-[#FAF0EE] rounded-lg flex items-center gap-2 text-xs font-bold cursor-pointer"
+                className="p-1.5 -ml-1 text-white hover:bg-white/10 rounded-lg flex items-center gap-2 text-xs font-bold cursor-pointer"
                 aria-label="Mở menu"
               >
-                <Menu className="w-5 h-5 text-[#8E2433]" />
-                <span className="font-black text-[#233044]">Lớp {state.config.className}</span>
+                <Menu className="w-5 h-5 text-white" />
+                <span className="font-black text-white">Lớp {state.config.className}</span>
               </button>
               <div className="flex items-center gap-1.5">
                 <span
                   className={`w-2 h-2 rounded-full ${
-                    syncStatus.isTableReady ? 'bg-emerald-500' : 'bg-amber-400'
+                    syncStatus.isTableReady ? 'bg-emerald-400' : 'bg-amber-400'
                   }`}
                 />
-                <span className="text-[11px] font-bold text-[#6B7280]">
+                <span className="text-[11px] font-bold text-[#94A3B8]">
                   {pageTitles[currentView] || 'Trợ lý'}
                 </span>
               </div>
             </div>
 
-            {/* Main content viewport: Luxury Education Warm Ivory (#FFF8F3) */}
-            <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-2 sm:p-3 lg:p-4 bg-[#FFF8F3]">
+            {/* Main content viewport: Luxury Education Warm Ivory (#FFF8F4) */}
+            <main className="flex-1 min-h-0 flex flex-col overflow-hidden p-2 sm:p-3 lg:p-4 bg-[#FFF8F4]">
               {authRole === 'teacher' && currentView === 'dashboard' && (
                 <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                   <DashboardView

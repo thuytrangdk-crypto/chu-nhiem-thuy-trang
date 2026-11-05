@@ -389,15 +389,15 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] border border-[#E9E2DF]">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh] border border-[#E8DEDA]">
         {/* Modal Header */}
-        <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#E9E2DF] bg-gradient-to-r from-[#FAF0EE] to-[#FFF8F3] shrink-0">
+        <div className="flex justify-between items-center p-4 sm:p-5 border-b border-[#E8DEDA] bg-gradient-to-r from-[#F5EDEB] to-[#FFF8F4] shrink-0">
           <div className="flex items-center gap-2.5">
             <div
               className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-2xs ${
                 isEditing
                   ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                  : 'bg-[#FAF0EE] text-[#8E2433] border border-[#E9E2DF]'
+                  : 'bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]'
               }`}
             >
               {isEditing ? (
@@ -407,12 +407,12 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
               )}
             </div>
             <div>
-              <h3 className="text-base font-black text-[#233044] leading-tight uppercase">
+              <h3 className="text-base font-black text-[#233146] leading-tight uppercase">
                 {isEditing
                   ? 'Thay đổi thông tin đã đăng'
                   : 'Đăng thông tin mới lên Bảng tin'}
               </h3>
-              <p className="text-[11px] text-[#6B7280] font-medium">
+              <p className="text-[11px] text-[#697589] font-medium">
                 {isEditing
                   ? 'Cập nhật nội dung, nhiều ảnh, video trực tiếp hoặc liên kết'
                   : 'Hỗ trợ tải video từ thiết bị, chèn nhiều ảnh và liên kết'}
@@ -427,7 +427,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
               className={`px-3.5 py-1.5 font-bold rounded-xl text-xs sm:text-sm shadow-xs flex items-center gap-1.5 transition-all ${
                 isUploading
                   ? 'bg-gray-400 text-white cursor-not-allowed'
-                  : 'bg-[#8E2433] hover:bg-[#721C28] text-white cursor-pointer shadow-md shadow-[#8E2433]/20'
+                  : 'bg-[#922235] hover:bg-[#781C2B] text-white cursor-pointer shadow-md shadow-[#922235]/20'
               }`}
               title="Lưu thông báo này"
             >
@@ -446,7 +446,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
             <button
               onClick={onClose}
               disabled={isUploading}
-              className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center border border-[#E9E2DF] transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-gray-400 hover:text-gray-700 flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -471,7 +471,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Ví dụ: Kế hoạch ngoại khóa, Lịch thi, Nhắc nhở nề nếp..."
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none text-sm font-bold text-gray-900"
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none text-sm font-bold text-[#233146]"
               />
             </div>
 
@@ -479,7 +479,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-[#0284c7]" />
+                  <Calendar className="w-3.5 h-3.5 text-[#922235]" />
                   <span>Ngày đăng</span>
                 </label>
                 <input
@@ -487,7 +487,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none text-xs sm:text-sm font-semibold"
+                  className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none text-xs sm:text-sm font-semibold text-[#233146]"
                 />
               </div>
 
@@ -498,7 +498,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as NoticeType)}
-                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none text-xs sm:text-sm font-semibold bg-white cursor-pointer"
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none text-xs sm:text-sm font-semibold bg-white cursor-pointer text-[#233146]"
                 >
                   <option value="info">Thông tin chung</option>
                   <option value="warning">Nhắc nhở nề nếp / Y tế</option>
@@ -518,22 +518,22 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Nhập nội dung đầy đủ của thông báo gửi đến học sinh và phụ huynh..."
-                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none text-xs sm:text-sm leading-relaxed"
+                className="w-full px-3.5 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none text-xs sm:text-sm leading-relaxed text-[#233146]"
               />
             </div>
 
             {/* MULTIMEDIA ATTACHMENTS SECTION */}
-            <div className="bg-[#FAF0EE]/40 rounded-2xl border border-[#E9E2DF] p-3.5 space-y-3">
+            <div className="bg-[#F5EDEB]/40 rounded-2xl border border-[#E8DEDA] p-3.5 space-y-3">
               {/* Media Subtab Selector */}
-              <div className="flex items-center justify-between border-b border-[#E9E2DF] pb-2.5 flex-wrap gap-2">
+              <div className="flex items-center justify-between border-b border-[#E8DEDA] pb-2.5 flex-wrap gap-2">
                 <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => setActiveMediaTab('images')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'images'
-                        ? 'bg-[#8E2433] text-white shadow-xs'
-                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
+                        ? 'bg-[#922235] text-white shadow-xs font-bold'
+                        : 'bg-white text-[#233146] hover:bg-[#F5EDEB] border border-[#E8DEDA]'
                     }`}
                   >
                     <ImageIcon className="w-3.5 h-3.5" />
@@ -545,8 +545,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     onClick={() => setActiveMediaTab('video')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'video'
-                        ? 'bg-[#8E2433] text-white shadow-xs'
-                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
+                        ? 'bg-[#922235] text-white shadow-xs font-bold'
+                        : 'bg-white text-[#233146] hover:bg-[#F5EDEB] border border-[#E8DEDA]'
                     }`}
                   >
                     <VideoIcon className="w-3.5 h-3.5" />
@@ -558,8 +558,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     onClick={() => setActiveMediaTab('link')}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                       activeMediaTab === 'link'
-                        ? 'bg-[#8E2433] text-white shadow-xs'
-                        : 'bg-white text-[#233044] hover:bg-[#FAF0EE] border border-[#E9E2DF]'
+                        ? 'bg-[#922235] text-white shadow-xs font-bold'
+                        : 'bg-white text-[#233146] hover:bg-[#F5EDEB] border border-[#E8DEDA]'
                     }`}
                   >
                     <Link2 className="w-3.5 h-3.5" />
@@ -568,19 +568,19 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 </div>
 
                 {/* Overall status count */}
-                <div className="text-[11px] text-gray-500 font-semibold flex items-center gap-1">
+                <div className="text-[11px] text-[#697589] font-semibold flex items-center gap-1">
                   {images.length > 0 && (
-                    <span className="px-1.5 py-0.5 rounded bg-[#d7effb] text-sky-950 font-bold border border-[#a7dff6]">
+                    <span className="px-1.5 py-0.5 rounded bg-[#F5EDEB] text-[#233146] font-bold border border-[#E8DEDA]">
                       {images.length} ảnh
                     </span>
                   )}
                   {hasAnyVideo && (
-                    <span className="px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 font-bold border border-purple-200">
+                    <span className="px-1.5 py-0.5 rounded bg-[#F5EDEB] text-[#781C2B] font-bold border border-[#E8DEDA]">
                       1 video
                     </span>
                   )}
                   {linkUrl && (
-                    <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">
+                    <span className="px-1.5 py-0.5 rounded bg-[#F5EDEB] text-[#922235] font-bold border border-[#E8DEDA]">
                       1 liên kết
                     </span>
                   )}
@@ -594,9 +594,9 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3.5 py-2 bg-white hover:bg-[#d7effb]/40 text-sky-950 font-bold text-xs rounded-xl border border-[#a7dff6] shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
+                      className="px-3.5 py-2 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold text-xs rounded-xl border border-[#E8DEDA] shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all"
                     >
-                      <Upload className="w-3.5 h-3.5 text-[#0284c7]" />
+                      <Upload className="w-3.5 h-3.5 text-[#922235]" />
                       <span>Chọn nhiều ảnh từ máy / điện thoại</span>
                     </button>
                     <input
@@ -611,9 +611,9 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowImageUrlInput(!showImageUrlInput)}
-                      className="px-3 py-2 bg-white hover:bg-gray-100 text-gray-700 font-semibold text-xs rounded-xl border border-gray-200 flex items-center gap-1 cursor-pointer transition-colors"
+                      className="px-3 py-2 bg-white hover:bg-gray-100 text-[#233146] font-semibold text-xs rounded-xl border border-gray-200 flex items-center gap-1 cursor-pointer transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5 text-[#0284c7]" />
+                      <Plus className="w-3.5 h-3.5 text-[#922235]" />
                       <span>{showImageUrlInput ? 'Ẩn ô dán link' : 'Dán link ảnh'}</span>
                     </button>
 
@@ -629,18 +629,18 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                   </div>
 
                   {showImageUrlInput && (
-                    <div className="flex items-center gap-2 p-2 bg-white rounded-xl border border-[#a7dff6] animate-fadeIn">
+                    <div className="flex items-center gap-2 p-2 bg-white rounded-xl border border-[#E8DEDA] animate-fadeIn">
                       <input
                         type="url"
                         value={imageUrlInput}
                         onChange={(e) => setImageUrlInput(e.target.value)}
                         placeholder="Dán đường dẫn ảnh (https://...)"
-                        className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#0284c7]"
+                        className="flex-1 px-3 py-1.5 text-xs border border-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-[#922235]"
                       />
                       <button
                         type="button"
                         onClick={handleAddImageUrl}
-                        className="px-3 py-1.5 bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold rounded-lg cursor-pointer shrink-0"
+                        className="px-3 py-1.5 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-lg cursor-pointer shrink-0"
                       >
                         Thêm ảnh
                       </button>
@@ -649,10 +649,10 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
 
                   {/* Thumbnail gallery */}
                   {images.length === 0 ? (
-                    <div className="py-6 px-4 border border-dashed border-[#a7dff6] rounded-2xl text-center bg-white/70">
-                      <ImageIcon className="w-8 h-8 text-[#0284c7] mx-auto mb-1.5 opacity-60" />
-                      <p className="text-xs font-bold text-gray-700">Chưa có ảnh nào được chọn</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
+                    <div className="py-6 px-4 border border-dashed border-[#E8DEDA] rounded-2xl text-center bg-white/70">
+                      <ImageIcon className="w-8 h-8 text-[#922235] mx-auto mb-1.5 opacity-60" />
+                      <p className="text-xs font-bold text-[#233146]">Chưa có ảnh nào được chọn</p>
+                      <p className="text-[11px] text-[#697589] mt-0.5">
                         Bạn có thể chọn cùng lúc nhiều ảnh từ máy tính hoặc điện thoại
                       </p>
                     </div>
@@ -690,14 +690,14 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
               {activeMediaTab === 'video' && (
                 <div className="space-y-3">
                   {/* TWO CLEAR OPTIONS SELECTOR */}
-                  <div className="grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-[#a7dff6]/80">
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-white rounded-xl border border-[#E8DEDA]">
                     <button
                       type="button"
                       onClick={() => setVideoSourceType('upload')}
                       className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         videoSourceType === 'upload'
-                          ? 'bg-[#0284c7] text-white shadow-xs'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'bg-[#922235] text-white shadow-xs font-bold'
+                          : 'text-[#233146] hover:bg-[#F5EDEB]'
                       }`}
                     >
                       <UploadCloud className="w-4 h-4" />
@@ -709,8 +709,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                       onClick={() => setVideoSourceType('url')}
                       className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                         videoSourceType === 'url'
-                          ? 'bg-[#0284c7] text-white shadow-xs'
-                          : 'text-gray-600 hover:bg-gray-100'
+                          ? 'bg-[#922235] text-white shadow-xs font-bold'
+                          : 'text-[#233146] hover:bg-[#F5EDEB]'
                       }`}
                     >
                       <Link2 className="w-4 h-4" />
@@ -730,31 +730,31 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                       />
 
                       {!hasAnyVideo ? (
-                        <div className="p-6 border-2 border-dashed border-[#a7dff6] hover:border-[#0284c7] rounded-2xl bg-white/80 text-center transition-colors">
-                          <div className="w-12 h-12 rounded-2xl bg-[#d7effb] text-[#0284c7] flex items-center justify-center mx-auto mb-3 shadow-inner">
+                        <div className="p-6 border-2 border-dashed border-[#E8DEDA] hover:border-[#922235] rounded-2xl bg-white/80 text-center transition-colors">
+                          <div className="w-12 h-12 rounded-2xl bg-[#F5EDEB] text-[#922235] flex items-center justify-center mx-auto mb-3 shadow-inner">
                             <Film className="w-6 h-6" />
                           </div>
-                          <p className="text-xs font-bold text-gray-800 mb-1">
+                          <p className="text-xs font-bold text-[#233146] mb-1">
                             Chọn video MP4 từ máy tính hoặc điện thoại
                           </p>
-                          <p className="text-[11px] text-gray-500 mb-3 max-w-sm mx-auto">
-                            Tệp video sẽ được lưu trữ vĩnh viễn trên Supabase Storage và hiển thị trực tiếp trong bài đăng trên mọi thiết bị.
+                          <p className="text-[11px] text-[#697589] mb-3 max-w-sm mx-auto">
+                            Tệp video sẽ được lưu trữ an toàn trên Supabase Storage và hiển thị trực tiếp trong bài đăng trên mọi thiết bị.
                           </p>
 
                           <button
                             type="button"
                             onClick={() => videoInputRef.current?.click()}
-                            className="px-4 py-2 bg-[#0284c7] hover:bg-[#0369a1] text-white text-xs font-bold rounded-xl shadow-xs inline-flex items-center gap-2 cursor-pointer transition-all"
+                            className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-xl shadow-xs inline-flex items-center gap-2 cursor-pointer transition-all"
                           >
                             <Upload className="w-4 h-4" />
                             <span>Chọn tệp video (Tối đa 100MB)</span>
                           </button>
 
-                          <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-400 font-semibold flex-wrap">
+                          <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-500 font-semibold flex-wrap">
                             <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
                               Ưu tiên: MP4 (H.264)
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="px-2 py-0.5 rounded bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA]">
                               Hỗ trợ: WebM, iPhone (.mov)
                             </span>
                             <span className="px-2 py-0.5 rounded bg-gray-100 text-gray-600">
@@ -763,7 +763,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                           </div>
                         </div>
                       ) : (
-                        <div className="p-3.5 bg-white rounded-2xl border border-[#a7dff6] space-y-3 shadow-2xs">
+                        <div className="p-3.5 bg-white rounded-2xl border border-[#E8DEDA] space-y-3 shadow-2xs">
                           {/* File info bar */}
                           <div className="flex items-center justify-between gap-2 flex-wrap">
                             <div className="flex items-center gap-2.5 min-w-0">
@@ -850,21 +850,21 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
 
                           {/* Live Upload Progress */}
                           {isUploading && (
-                            <div className="p-3 bg-sky-50 rounded-xl border border-sky-200 space-y-1.5 animate-fadeIn">
-                              <div className="flex items-center justify-between text-xs font-bold text-sky-900">
+                            <div className="p-3 bg-[#F5EDEB] rounded-xl border border-[#E8DEDA] space-y-1.5 animate-fadeIn">
+                              <div className="flex items-center justify-between text-xs font-bold text-[#233146]">
                                 <span className="flex items-center gap-1.5">
-                                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#0284c7]" />
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#922235]" />
                                   Đang tải video lên Supabase Storage...
                                 </span>
                                 <span>{uploadProgress}%</span>
                               </div>
-                              <div className="w-full bg-sky-200 rounded-full h-2 overflow-hidden">
+                              <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
                                 <div
-                                  className="bg-[#0284c7] h-full transition-all duration-200 rounded-full"
+                                  className="bg-[#922235] h-full transition-all duration-200 rounded-full"
                                   style={{ width: `${uploadProgress}%` }}
                                 />
                               </div>
-                              <p className="text-[11px] text-sky-700">
+                              <p className="text-[11px] text-[#697589]">
                                 Vui lòng giữ nguyên cửa sổ và không đóng trình duyệt trong khi tải tệp.
                               </p>
                             </div>
@@ -927,7 +927,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                               }
                             }}
                             placeholder="Ví dụ: https://www.youtube.com/watch?v=... hoặc https://youtu.be/..."
-                            className="flex-1 px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none font-medium"
+                            className="flex-1 px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none font-medium"
                           />
                           {videoUrl && (
                             <button
@@ -948,7 +948,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                       {videoUrl.trim() && (
                         <div className="p-3 bg-white rounded-2xl border border-gray-200 space-y-2">
                           <span className="text-[11px] font-bold text-gray-500 uppercase flex items-center gap-1">
-                            <Play className="w-3.5 h-3.5 text-[#0284c7]" /> Xem trước video sẽ hiển thị:
+                            <Play className="w-3.5 h-3.5 text-[#922235]" /> Xem trước video sẽ hiển thị:
                           </span>
 
                           {ytEmbed ? (
@@ -982,14 +982,14 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                           ) : (
                             <div className="p-4 bg-gray-50 rounded-xl flex items-center justify-between">
                               <div className="flex items-center gap-2 text-xs text-gray-700">
-                                <VideoIcon className="w-4 h-4 text-[#0284c7]" />
+                                <VideoIcon className="w-4 h-4 text-[#922235]" />
                                 <span className="font-semibold truncate max-w-xs">{videoUrl}</span>
                               </div>
                               <a
                                 href={sanitizeUrl(videoUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-2.5 py-1 bg-white border border-gray-200 text-xs font-bold text-blue-600 rounded-lg flex items-center gap-1 hover:bg-blue-50"
+                                className="px-2.5 py-1 bg-[#F5EDEB] border border-[#E8DEDA] text-xs font-bold text-[#922235] rounded-lg flex items-center gap-1 hover:bg-[#E8DEDA]"
                               >
                                 <span>Mở liên kết</span>
                                 <ExternalLink className="w-3 h-3" />
@@ -1015,7 +1015,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                       value={linkUrl}
                       onChange={(e) => setLinkUrl(e.target.value)}
                       placeholder="https://docs.google.com/forms/... hoặc trang web liên kết"
-                      className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none font-medium"
+                      className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none font-medium text-[#233146]"
                     />
                   </div>
 
@@ -1028,21 +1028,21 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                       value={linkTitle}
                       onChange={(e) => setLinkTitle(e.target.value)}
                       placeholder="Ví dụ: Bấm để điền đơn khảo sát, Tải tài liệu hướng dẫn..."
-                      className="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#0284c7] focus:border-[#a7dff6] outline-none"
+                      className="w-full px-3.5 py-2 bg-white border border-gray-300 rounded-xl text-xs sm:text-sm focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none text-[#233146]"
                     />
                   </div>
 
                   {linkUrl.trim() && (
-                    <div className="p-3 bg-white rounded-2xl border border-gray-200 flex items-center justify-between gap-3">
+                    <div className="p-3 bg-white rounded-2xl border border-[#E8DEDA] flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-9 h-9 rounded-xl bg-[#d7effb] text-[#0284c7] border border-[#a7dff6] flex items-center justify-center shrink-0">
+                        <div className="w-9 h-9 rounded-xl bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0">
                           <FileText className="w-4 h-4" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-gray-900 truncate">
+                          <p className="text-xs font-bold text-[#233146] truncate">
                             {linkTitle.trim() || extractDomain(linkUrl)}
                           </p>
-                          <p className="text-[11px] text-gray-400 truncate">{linkUrl}</p>
+                          <p className="text-[11px] text-[#697589] truncate">{linkUrl}</p>
                         </div>
                       </div>
                       <button
@@ -1097,7 +1097,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
                 className={`px-6 py-2.5 font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 ${
                   isUploading
                     ? 'bg-gray-400 text-white cursor-not-allowed'
-                    : 'bg-[#8E2433] hover:bg-[#721C28] text-white hover:shadow-[#8E2433]/25 cursor-pointer'
+                    : 'bg-[#922235] hover:bg-[#781C2B] text-white hover:shadow-[#922235]/25 cursor-pointer'
                 }`}
               >
                 {isUploading ? (

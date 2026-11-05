@@ -100,50 +100,65 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="space-y-2.5 sm:space-y-3 max-w-7xl mx-auto pb-3 animate-fadeIn">
-      {/* 1. Welcome Banner: Luxury Ruby Red & Warm Ivory Gradient */}
-      <div className="bg-gradient-to-r from-[#8E2433] via-[#9E2837] to-[#721C28] rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden shrink-0 border border-[#8E2433]/30">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/10 transform skew-x-12 pointer-events-none" />
-        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      {/* 1. Welcome Banner: Luxury Wine Red & Navy Gradient (Matching 6A5) */}
+      <div className="bg-gradient-to-r from-[#781C2B] via-[#922235] to-[#233146] rounded-2xl p-4 sm:p-5 text-white shadow-md relative overflow-hidden shrink-0 border border-[#781C2B]/40">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-white/5 transform skew-x-12 pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h1 className="text-lg sm:text-xl font-black tracking-tight truncate leading-tight text-white drop-shadow-2xs">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-black/20 backdrop-blur-md rounded-full text-xs font-medium text-white/90 border border-white/15 mb-2 shadow-2xs">
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>
+                Năm học {state.config.schoolYear} · {state.config.schoolName || 'Trường THCS Nguyễn Huệ'}
+              </span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black tracking-tight truncate leading-tight text-white drop-shadow-2xs">
               Trợ Lý Chủ Nhiệm • Lớp {state.config.className}
             </h1>
-            <p className="text-[#FAF0EE] text-xs sm:text-sm mt-0.5 font-medium truncate flex items-center gap-1.5 flex-wrap">
+            <p className="text-white/85 text-xs sm:text-sm mt-1 font-medium truncate flex items-center gap-1.5 flex-wrap">
               <span>Giáo viên chủ nhiệm:</span>
               <strong className="text-white font-bold">{state.config.teacherName || 'Chưa thiết lập'}</strong>
             </p>
           </div>
-          <div className="shrink-0 self-start sm:self-center">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-white/15 backdrop-blur-md rounded-xl text-xs font-black text-white border border-white/20 shadow-2xs whitespace-nowrap">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Năm học {state.config.schoolYear}</span>
-            </span>
+
+          <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-center">
+            <button
+              onClick={() => onNavigate('board')}
+              className="px-4 py-2 bg-white/15 hover:bg-white/25 active:bg-white/30 text-white font-bold rounded-xl text-xs sm:text-sm shadow-2xs border border-white/20 transition-all cursor-pointer whitespace-nowrap"
+            >
+              Xem Bảng tin
+            </button>
+            <button
+              onClick={() => onNavigate('attendance')}
+              className="px-4 py-2 bg-[#F5EDEB] hover:bg-white active:bg-[#E8DEDA] text-[#233146] font-bold rounded-xl text-xs sm:text-sm shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            >
+              Điểm danh hôm nay
+            </button>
           </div>
         </div>
       </div>
 
-      {/* 2. 4 Stats Grid: 4 cards in 1 row on desktop, 2x2 on mobile, height 90-105px, padding 12px, gap 12px */}
+      {/* 2. 4 Stats Grid: 4 cards in 1 row on desktop, 2x2 on mobile */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {/* Card 1: Sĩ số lớp */}
         <div
           onClick={() => onNavigate('students')}
-          className="bg-white p-3 rounded-xl shadow-2xs border border-[#E9E2DF] hover:shadow-xs hover:border-[#8E2433]/40 transition-all cursor-pointer group flex flex-col justify-between h-[94px] sm:h-[98px]"
+          className="bg-white p-3.5 rounded-2xl shadow-2xs border border-[#E8DEDA] hover:shadow-xs hover:border-[#922235]/40 transition-all cursor-pointer group flex flex-col justify-between h-[96px] sm:h-[102px]"
         >
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[#6B7280] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
+            <span className="text-[#697589] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
               Sĩ số lớp
             </span>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]/70 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <Users className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-0.5">
-            <p className="text-2xl sm:text-[26px] font-black text-[#233044] leading-none tracking-tight">
+            <p className="text-2xl sm:text-[26px] font-black text-[#233146] leading-none tracking-tight">
               {totalStudents}
             </p>
-            <p className="text-[11px] sm:text-xs text-[#6B7280] font-medium truncate mt-1">
-              <span className="text-[#8E2433] font-bold">{maleCount}</span> Nam ·{' '}
-              <span className="text-rose-600 font-bold">{femaleCount}</span> Nữ
+            <p className="text-[11px] sm:text-xs text-[#697589] font-medium truncate mt-1">
+              <span className="text-[#922235] font-bold">{maleCount}</span> Nam ·{' '}
+              <span className="text-[#781C2B] font-bold">{femaleCount}</span> Nữ
             </p>
           </div>
         </div>
@@ -151,21 +166,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 2: Vắng (Hôm nay) */}
         <div
           onClick={() => onNavigate('attendance')}
-          className="bg-white p-3 rounded-xl shadow-2xs border border-[#E9E2DF] hover:shadow-xs hover:border-red-200 transition-all cursor-pointer group flex flex-col justify-between h-[94px] sm:h-[98px]"
+          className="bg-white p-3.5 rounded-2xl shadow-2xs border border-[#E8DEDA] hover:shadow-xs hover:border-red-200 transition-all cursor-pointer group flex flex-col justify-between h-[96px] sm:h-[102px]"
         >
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[#6B7280] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
+            <span className="text-[#697589] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
               Vắng (Hôm nay)
             </span>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <UserX className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-0.5">
-            <p className="text-2xl sm:text-[26px] font-black text-[#233044] leading-none tracking-tight">
+            <p className="text-2xl sm:text-[26px] font-black text-[#233146] leading-none tracking-tight">
               {absentToday}
             </p>
-            <p className="text-[11px] sm:text-xs text-[#6B7280] font-medium truncate mt-1">
+            <p className="text-[11px] sm:text-xs text-[#697589] font-medium truncate mt-1">
               {absentToday === 0 ? (
                 <span className="text-emerald-700 font-bold">Đi học đầy đủ 100%</span>
               ) : (
@@ -178,21 +193,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 3: Vi phạm (Tuần) */}
         <div
           onClick={() => onNavigate('board')}
-          className="bg-white p-3 rounded-xl shadow-2xs border border-[#E9E2DF] hover:shadow-xs hover:border-amber-200 transition-all cursor-pointer group flex flex-col justify-between h-[94px] sm:h-[98px]"
+          className="bg-white p-3.5 rounded-2xl shadow-2xs border border-[#E8DEDA] hover:shadow-xs hover:border-amber-200 transition-all cursor-pointer group flex flex-col justify-between h-[96px] sm:h-[102px]"
         >
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[#6B7280] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
+            <span className="text-[#697589] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
               Vi phạm (Tuần)
             </span>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-0.5">
-            <p className="text-2xl sm:text-[26px] font-black text-[#233044] leading-none tracking-tight">
+            <p className="text-2xl sm:text-[26px] font-black text-[#233146] leading-none tracking-tight">
               {violationsWeek}
             </p>
-            <p className="text-[11px] sm:text-xs text-[#6B7280] font-medium truncate mt-1">
+            <p className="text-[11px] sm:text-xs text-[#697589] font-medium truncate mt-1">
               Lượt trừ điểm nề nếp
             </p>
           </div>
@@ -201,18 +216,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 4: Khen thưởng */}
         <div
           onClick={() => onNavigate('board')}
-          className="bg-white p-3 rounded-xl shadow-2xs border border-[#E9E2DF] hover:shadow-xs hover:border-emerald-200 transition-all cursor-pointer group flex flex-col justify-between h-[94px] sm:h-[98px]"
+          className="bg-white p-3.5 rounded-2xl shadow-2xs border border-[#E8DEDA] hover:shadow-xs hover:border-emerald-200 transition-all cursor-pointer group flex flex-col justify-between h-[96px] sm:h-[102px]"
         >
           <div className="flex items-center justify-between gap-1">
-            <span className="text-[#6B7280] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
+            <span className="text-[#697589] font-bold text-xs sm:text-[13px] uppercase tracking-wider truncate">
               Khen thưởng
             </span>
-            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
               <Award className="w-4 h-4" />
             </div>
           </div>
           <div className="mt-0.5">
-            <p className="text-2xl sm:text-[26px] font-black text-[#233044] leading-none tracking-tight">
+            <p className="text-2xl sm:text-[26px] font-black text-[#233146] leading-none tracking-tight">
               {rewardsWeek}
             </p>
             <p className="text-[11px] sm:text-xs text-emerald-700 font-bold truncate mt-1">
@@ -226,20 +241,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Left: Học sinh cần chú ý (Teacher) or Góc học tập (Student) */}
         {isTeacher ? (
-          <div className="bg-white rounded-2xl shadow-2xs border border-[#E9E2DF] overflow-hidden flex flex-col">
-            <div className="px-4 py-3 border-b border-[#E9E2DF] flex items-center justify-between bg-[#FAF0EE]/60 shrink-0">
+          <div className="bg-white rounded-2xl shadow-2xs border border-[#E8DEDA] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-[#E8DEDA] flex items-center justify-between bg-[#F5EDEB]/60 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] flex items-center justify-center shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0">
                   <Bell className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#233044] text-xs sm:text-sm">Học sinh cần chú ý</h3>
-                  <p className="text-[10px] sm:text-[11px] text-[#6B7280]">
+                  <h3 className="font-bold text-[#233146] text-xs sm:text-sm">Học sinh cần chú ý</h3>
+                  <p className="text-[10px] sm:text-[11px] text-[#697589]">
                     Nghỉ học nhiều, có lỗi vi phạm hoặc cần liên hệ phụ huynh
                   </p>
                 </div>
               </div>
-              <span className="text-[11px] font-black text-[#8E2433] bg-[#FAF0EE] border border-[#EBC9B9] px-2 py-0.5 rounded-full shrink-0">
+              <span className="text-[11px] font-black text-[#922235] bg-[#F5EDEB] border border-[#E8DEDA] px-2 py-0.5 rounded-full shrink-0">
                 {attentionStudents.length} em
               </span>
             </div>
@@ -248,10 +263,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {attentionStudents.length === 0 ? (
                 <div className="text-center text-gray-400 py-10 flex flex-col items-center">
                   <Sparkles className="w-8 h-8 text-emerald-400 mb-1.5 opacity-80" />
-                  <p className="text-xs sm:text-sm font-semibold text-[#233044]">
+                  <p className="text-xs sm:text-sm font-semibold text-[#233146]">
                     Tuyệt vời! Lớp nề nếp rất tốt
                   </p>
-                  <p className="text-[11px] text-[#6B7280] mt-0.5">
+                  <p className="text-[11px] text-[#697589] mt-0.5">
                     Không có học sinh nào cần lưu ý đặc biệt lúc này.
                   </p>
                 </div>
@@ -260,10 +275,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     key={student.id}
                     onClick={() => onSelectStudent(student.id)}
-                    className="flex items-center justify-between py-2 px-2.5 rounded-xl hover:bg-[#FFF8F3] transition-colors cursor-pointer group"
+                    className="flex items-center justify-between py-2 px-2.5 rounded-xl hover:bg-[#FFF8F4] transition-colors cursor-pointer group"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-xl bg-[#FAF0EE] text-[#8E2433] border border-[#E9E2DF] flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
+                      <div className="w-8 h-8 rounded-xl bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA] flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden">
                         {student.avatar ? (
                           <img
                             src={student.avatar}
@@ -275,7 +290,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-bold text-[#233044] group-hover:text-[#8E2433] transition-colors uppercase leading-snug truncate">
+                        <p className="text-xs sm:text-sm font-bold text-[#233146] group-hover:text-[#922235] transition-colors uppercase leading-snug truncate">
                           {student.name}
                         </p>
                         <div className="flex flex-wrap gap-1 mt-0.5">
@@ -285,19 +300,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                             </span>
                           )}
                           {minusViolations > 0 && (
-                            <span className="px-1.5 py-0.2 bg-rose-50 text-rose-700 border border-rose-200 rounded text-[10px] font-bold">
+                            <span className="px-1.5 py-0.2 bg-rose-50 text-[#922235] border border-rose-200 rounded text-[10px] font-bold">
                               Vi phạm: {minusViolations}
                             </span>
                           )}
                           {parentContactNotes > 0 && (
-                            <span className="px-1.5 py-0.2 bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] rounded text-[10px] font-bold">
+                            <span className="px-1.5 py-0.2 bg-[#F5EDEB] text-[#781C2B] border border-[#E8DEDA] rounded text-[10px] font-bold">
                               Cần LH phụ huynh
                             </span>
                           )}
                         </div>
                       </div>
                     </div>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#8E2433] group-hover:translate-x-0.5 transition-all shrink-0 ml-1.5" />
+                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-[#922235] group-hover:translate-x-0.5 transition-all shrink-0 ml-1.5" />
                   </div>
                 ))
               )}
@@ -305,15 +320,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         ) : (
           /* Student View: Personalized Card */
-          <div className="bg-white rounded-2xl shadow-2xs border border-[#E9E2DF] overflow-hidden flex flex-col">
-            <div className="px-4 py-3 border-b border-[#E9E2DF] flex items-center justify-between bg-emerald-50/50 shrink-0">
+          <div className="bg-white rounded-2xl shadow-2xs border border-[#E8DEDA] overflow-hidden flex flex-col">
+            <div className="px-4 py-3 border-b border-[#E8DEDA] flex items-center justify-between bg-emerald-50/50 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                   <Award className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-[#233044] text-xs sm:text-sm">Góc học tập của bạn</h3>
-                  <p className="text-[10px] sm:text-[11px] text-[#6B7280]">
+                  <h3 className="font-bold text-[#233146] text-xs sm:text-sm">Góc học tập của bạn</h3>
+                  <p className="text-[10px] sm:text-[11px] text-[#697589]">
                     Thông tin thi đua, nề nếp và chuyên cần cá nhân
                   </p>
                 </div>
@@ -326,8 +341,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
               {currentStudent ? (
                 <>
-                  <div className="flex items-center gap-3 p-3 rounded-xl bg-[#FFF8F3] border border-[#E9E2DF]">
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#8E2433] to-[#A33243] text-white flex items-center justify-center font-black text-lg shadow-2xs shrink-0 overflow-hidden">
+                  <div className="flex items-center gap-3 p-3 rounded-xl bg-[#FFF8F4] border border-[#E8DEDA]">
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#922235] to-[#781C2B] text-white flex items-center justify-center font-black text-lg shadow-2xs shrink-0 overflow-hidden">
                       {currentStudent.avatar ? (
                         <img
                           src={currentStudent.avatar}
@@ -339,13 +354,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-[#233044] text-sm uppercase leading-snug truncate">
+                      <h4 className="font-bold text-[#233146] text-sm uppercase leading-snug truncate">
                         {currentStudent.name}
                       </h4>
-                      <p className="text-[11px] text-[#6B7280] mt-0.5 truncate">
+                      <p className="text-[11px] text-[#697589] mt-0.5 truncate">
                         Ngày sinh: <strong>{formatDisplayDate(currentStudent.dob)}</strong> • Giới tính: {currentStudent.gender}
                       </p>
-                      <span className="inline-block mt-0.5 text-[10px] font-mono text-[#8E2433] bg-[#FAF0EE] border border-[#EBC9B9] px-1.5 py-0.2 rounded font-semibold">
+                      <span className="inline-block mt-0.5 text-[10px] font-mono text-[#922235] bg-[#F5EDEB] border border-[#E8DEDA] px-1.5 py-0.2 rounded font-semibold">
                         Mã HS: {currentStudent.id}
                       </span>
                     </div>
@@ -375,7 +390,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   <button
                     onClick={() => onSelectStudent(currentStudent.id)}
-                    className="w-full py-2.5 bg-[#8E2433] hover:bg-[#721C28] text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                    className="w-full py-2.5 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Xem toàn bộ Bảng điểm &amp; Hồ sơ của bạn</span>
                     <ChevronRight className="w-3.5 h-3.5" />
@@ -391,22 +406,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         )}
 
         {/* Right: Hoạt động gần đây */}
-        <div className="bg-white rounded-2xl shadow-2xs border border-[#E9E2DF] overflow-hidden flex flex-col">
-          <div className="px-4 py-3 border-b border-[#E9E2DF] flex items-center justify-between bg-[#FAF0EE]/60 shrink-0">
+        <div className="bg-white rounded-2xl shadow-2xs border border-[#E8DEDA] overflow-hidden flex flex-col">
+          <div className="px-4 py-3 border-b border-[#E8DEDA] flex items-center justify-between bg-[#F5EDEB]/60 shrink-0">
             <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9] flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] flex items-center justify-center shrink-0">
                 <Clock className="w-4 h-4" />
               </div>
               <div>
-                <h3 className="font-bold text-[#233044] text-xs sm:text-sm">Hoạt động gần đây</h3>
-                <p className="text-[10px] sm:text-[11px] text-[#6B7280]">
+                <h3 className="font-bold text-[#233146] text-xs sm:text-sm">Hoạt động gần đây</h3>
+                <p className="text-[10px] sm:text-[11px] text-[#697589]">
                   Nhật ký thi đua, khen thưởng và trao đổi
                 </p>
               </div>
             </div>
             <button
               onClick={() => onNavigate('board')}
-              className="text-xs text-[#8E2433] hover:text-[#721C28] font-bold cursor-pointer"
+              className="text-xs text-[#922235] hover:text-[#781C2B] font-bold cursor-pointer"
             >
               Xem tất cả
             </button>
@@ -423,13 +438,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   const student = state.students.find((s) => s.id === act.studentId);
                   const studentName = student ? student.name : 'Học sinh';
 
-                  let badgeColor = 'bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]';
+                  let badgeColor = 'bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]';
                   let icon = <Clock className="w-3.5 h-3.5" />;
                   if (act.type === 'reward') {
-                    badgeColor = 'bg-emerald-50 text-emerald-600 border border-emerald-100';
+                    badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
                     icon = <Award className="w-3.5 h-3.5" />;
                   } else if (act.type === 'violation') {
-                    badgeColor = 'bg-rose-50 text-rose-600 border border-rose-100';
+                    badgeColor = 'bg-rose-50 text-rose-700 border border-rose-100';
                     icon = <AlertTriangle className="w-3.5 h-3.5" />;
                   }
 
@@ -446,7 +461,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <li
                       key={act.id}
                       onClick={handleActivityClick}
-                      className="px-3.5 py-2.5 flex items-start gap-3 hover:bg-[#FFF8F3] transition-colors cursor-pointer group"
+                      className="px-3.5 py-2.5 flex items-start gap-3 hover:bg-[#FFF8F4] transition-colors cursor-pointer group"
                     >
                       <div
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${badgeColor}`}
@@ -455,18 +470,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-xs font-bold text-[#233044] group-hover:text-[#8E2433] transition-colors uppercase leading-snug truncate">
+                          <p className="text-xs font-bold text-[#233146] group-hover:text-[#922235] transition-colors uppercase leading-snug truncate">
                             {studentName}
                           </p>
-                          <span className="text-[10px] text-[#6B7280] shrink-0">
+                          <span className="text-[10px] text-[#697589] shrink-0">
                             {formatDisplayDate(act.date)}
                           </span>
                         </div>
-                        <p className="text-xs text-[#233044] font-medium mt-0.5 truncate">
+                        <p className="text-xs text-[#233146] font-medium mt-0.5 truncate">
                           {act.title}
                         </p>
                         {act.desc && (
-                          <p className="text-[11px] text-[#6B7280] truncate mt-0.5">
+                          <p className="text-[11px] text-[#697589] truncate mt-0.5">
                             {act.desc}
                           </p>
                         )}

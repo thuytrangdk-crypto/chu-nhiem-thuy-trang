@@ -198,17 +198,17 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   return (
     <div className="space-y-5 animate-fadeIn">
       {/* Seating Toolbar */}
-      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xs border border-[#E9E2DF] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-3xl shadow-xs border border-[#E8DEDA] flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-[#233044]">
+            <h3 className="text-base font-bold text-[#233146]">
               Sơ đồ Chỗ ngồi Lớp {state.config.className}
             </h3>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#FAF0EE] text-[#8E2433] border border-[#EBC9B9]">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]">
               {occupiedCount}/{totalSeats} chỗ
             </span>
           </div>
-          <p className="text-xs text-[#6B7280] mt-0.5">
+          <p className="text-xs text-[#697589] mt-0.5">
             Mô hình: {layout.groups} tổ/dãy • {layout.rows} hàng bàn • Bàn đôi (2 học sinh/bàn)
           </p>
         </div>
@@ -216,25 +216,25 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
         {isTeacher && (
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {/* Table Rows Control */}
-            <div className="flex items-center gap-1 bg-[#FFF8F3] border border-[#E9E2DF] rounded-xl px-2 py-1 text-xs">
-              <span className="font-bold text-[#6B7280] mr-1">Quy mô:</span>
+            <div className="flex items-center gap-1 bg-[#FFF8F4] border border-[#E8DEDA] rounded-xl px-2 py-1 text-xs">
+              <span className="font-bold text-[#697589] mr-1">Quy mô:</span>
               <button
                 type="button"
                 onClick={handleRemoveRow}
                 disabled={layout.rows <= 3}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E9E2DF] text-[#233044] hover:bg-[#FAF0EE] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E8DEDA] text-[#233146] hover:bg-[#F5EDEB] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
                 title="Bớt 1 bàn mỗi dãy"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="font-black text-[#8E2433] px-1.5 min-w-[50px] text-center">
+              <span className="font-black text-[#922235] px-1.5 min-w-[50px] text-center">
                 {layout.rows} bàn/dãy
               </span>
               <button
                 type="button"
                 onClick={handleAddRow}
                 disabled={layout.rows >= 10}
-                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E9E2DF] text-[#233044] hover:bg-[#FAF0EE] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
+                className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E8DEDA] text-[#233146] hover:bg-[#F5EDEB] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
                 title="Thêm 1 bàn mỗi dãy"
               >
                 <Plus className="w-3 h-3" />
@@ -244,10 +244,10 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             {/* Auto Arrange Random */}
             <button
               onClick={() => handleAutoArrange('random')}
-              className="px-3 py-2 bg-[#FAF0EE] hover:bg-[#F5E5E0] text-[#8E2433] text-xs font-bold rounded-xl border border-[#EBC9B9] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+              className="px-3 py-2 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] text-xs font-bold rounded-xl border border-[#E8DEDA] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
               title="Xếp ngẫu nhiên danh sách vào các chỗ"
             >
-              <Shuffle className="w-3.5 h-3.5 text-[#8E2433]" />
+              <Shuffle className="w-3.5 h-3.5 text-[#922235]" />
               <span>Xếp ngẫu nhiên</span>
             </button>
 
@@ -274,7 +274,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             {/* Print Seating Chart */}
             <button
               onClick={handlePrint}
-              className="px-3.5 py-2 bg-[#8E2433] hover:bg-[#721C28] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3.5 py-2 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
               title="In sơ đồ lớp để dán tại lớp"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -302,13 +302,13 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
       )}
 
       {/* Main Classroom Seating Layout */}
-      <div className="bg-white rounded-3xl shadow-xs border border-[#E9E2DF] p-6 overflow-x-auto print:border-none print:shadow-none">
+      <div className="bg-white rounded-3xl shadow-xs border border-[#E8DEDA] p-6 overflow-x-auto print:border-none print:shadow-none">
         {/* PODIUM / TEACHER DESK (BỤC GIẢNG & BÀN GIÁO VIÊN) */}
         <div className="max-w-md mx-auto mb-8 text-center">
-          <div className="bg-gradient-to-r from-[#8E2433] via-[#9E2837] to-[#721C28] text-white font-black py-2.5 px-6 rounded-2xl text-xs sm:text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 border border-[#8E2433]/30">
+          <div className="bg-gradient-to-r from-[#781C2B] via-[#922235] to-[#233146] text-white font-black py-2.5 px-6 rounded-2xl text-xs sm:text-sm tracking-wider uppercase shadow-md flex items-center justify-center gap-2 border border-[#922235]/30">
             <span>BẢNG ĐEN • BỤC GIẢNG &amp; BÀN GIÁO VIÊN</span>
           </div>
-          <div className="h-4 border-l-2 border-r-2 border-dashed border-[#E9E2DF] mx-auto w-3/4" />
+          <div className="h-4 border-l-2 border-r-2 border-dashed border-[#E8DEDA] mx-auto w-3/4" />
         </div>
 
         {/* COLUMNS / GROUPS GRID */}
@@ -318,11 +318,11 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
             return (
               <div
                 key={`group-${groupNum}`}
-                className="bg-[#FFF8F3]/60 border border-[#E9E2DF] rounded-2xl p-3 flex flex-col space-y-3"
+                className="bg-[#FFF8F4]/60 border border-[#E8DEDA] rounded-2xl p-3 flex flex-col space-y-3"
               >
                 {/* Group Title Header */}
-                <div className="text-center pb-2 border-b border-[#E9E2DF]">
-                  <span className="text-xs font-black text-[#233044] uppercase tracking-wider">
+                <div className="text-center pb-2 border-b border-[#E8DEDA]">
+                  <span className="text-xs font-black text-[#233146] uppercase tracking-wider">
                     TỔ {groupNum} (DÃY {groupNum})
                   </span>
                 </div>
@@ -334,9 +334,9 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                     return (
                       <div
                         key={`g${groupNum}-r${rowNum}`}
-                        className="bg-white border border-[#E9E2DF] rounded-xl p-2 shadow-2xs hover:border-[#8E2433]/40 transition-colors"
+                        className="bg-white border border-[#E8DEDA] rounded-xl p-2 shadow-2xs hover:border-[#922235]/40 transition-colors"
                       >
-                        <div className="text-[10px] text-[#6B7280] font-bold uppercase mb-1.5 flex justify-between items-center px-1">
+                        <div className="text-[10px] text-[#697589] font-bold uppercase mb-1.5 flex justify-between items-center px-1">
                           <span>Bàn {rowNum}</span>
                         </div>
 
@@ -366,12 +366,12 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                       : isSwapSource
                                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300 animate-pulse'
                                       : isSelected
-                                      ? 'border-[#8E2433] bg-[#FAF0EE] ring-2 ring-[#8E2433]/30'
+                                      ? 'border-[#922235] bg-[#F5EDEB] ring-2 ring-[#922235]/30'
                                       : student
                                       ? student.gender === 'Nam'
-                                        ? 'border-blue-100 bg-blue-50/20 hover:border-[#8E2433]/40'
-                                        : 'border-rose-100 bg-rose-50/20 hover:border-[#8E2433]/40'
-                                      : 'border-dashed border-[#E9E2DF] hover:border-[#8E2433]/40 bg-gray-50/40 hover:bg-[#FAF0EE]/30'
+                                        ? 'border-blue-100 bg-blue-50/20 hover:border-[#922235]/40'
+                                        : 'border-rose-100 bg-rose-50/20 hover:border-[#922235]/40'
+                                      : 'border-dashed border-[#E8DEDA] hover:border-[#922235]/40 bg-gray-50/40 hover:bg-[#F5EDEB]/30'
                                   }`}
                                 >
                                   {student ? (
