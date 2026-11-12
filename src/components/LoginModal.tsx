@@ -29,7 +29,7 @@ interface LoginModalProps {
   className?: string;
   schoolYear?: string;
   onLoginTeacher: () => void;
-  onLoginStudent: (studentId: string, isFirstTimeInitialPassword?: boolean) => void;
+  onLoginStudent: (studentId: string) => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
@@ -87,9 +87,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     setTimeout(() => {
       if (selectedStudent) {
-        // Kiểm tra xem học sinh có đang dùng mật khẩu khởi tạo không
-        const isInitial = !selectedStudent.isPasswordChanged;
-        onLoginStudent(selectedStudent.id, isInitial);
+        onLoginStudent(selectedStudent.id);
         return;
       }
 
@@ -139,8 +137,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
       if (found.length === 1) {
         const student = found[0];
-        const isInitial = !student.isPasswordChanged;
-        onLoginStudent(student.id, isInitial);
+        onLoginStudent(student.id);
       } else {
         // Nếu có trùng lặp (ví dụ dùng ngày sinh cũ), cho học sinh chọn tên
         setMatchedStudents(found);
@@ -463,7 +460,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                         type="button"
                         onClick={() => {
                           setSelectedStudent(s);
-                          onLoginStudent(s.id, !s.isPasswordChanged);
+                          onLoginStudent(s.id);
                         }}
                         className={`w-full p-2.5 rounded-xl text-left text-xs font-bold flex items-center justify-between transition-all cursor-pointer ${
                           selectedStudent?.id === s.id
@@ -555,7 +552,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   const code = s.studentCode || '01';
                   const pass = s.password || generate10DigitInitialPassword(code, s.dob, 0) || '0115052012';
                   setStudentPasswordInput(pass);
-                  onLoginStudent(s.id, !s.isPasswordChanged);
+                  onLoginStudent(s.id);
                 }}
                 className="text-[#922235] hover:text-[#781C2B] font-black underline cursor-pointer shrink-0 ml-2"
               >

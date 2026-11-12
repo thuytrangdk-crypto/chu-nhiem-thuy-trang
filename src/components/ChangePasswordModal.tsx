@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { X, KeyRound, Eye, EyeOff, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
+import { X, KeyRound, Eye, EyeOff, ShieldCheck, AlertCircle } from 'lucide-react';
 
 interface ChangePasswordModalProps {
   isOpen: boolean;
   title?: string;
   description?: string;
   currentPassword?: string;
-  isFirstLoginMandatory?: boolean;
   onSave: (newPassword: string) => void;
   onClose: () => void;
 }
@@ -16,7 +15,6 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
   title = 'Đổi mật khẩu',
   description,
   currentPassword,
-  isFirstLoginMandatory = false,
   onSave,
   onClose,
 }) => {
@@ -79,28 +77,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
               )}
             </div>
           </div>
-          {!isFirstLoginMandatory && (
-            <button
-              onClick={onClose}
-              className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white hover:bg-gray-100 text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
-
-        {/* Mandatory first login banner */}
-        {isFirstLoginMandatory && (
-          <div className="p-3.5 bg-amber-50 border-b border-amber-200 text-amber-900 text-xs flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-            <div className="space-y-0.5 leading-relaxed">
-              <strong className="block font-bold">Yêu cầu bảo mật lần đầu:</strong>
-              <span>
-                Em đang dùng mật khẩu khởi tạo. Để bảo vệ thông tin học tập của mình, em vui lòng đặt một mật khẩu riêng (tùy chọn, dễ nhớ với em).
-              </span>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4 bg-[#FFF8F4]/25">
           {error && (
@@ -187,15 +170,13 @@ export const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
           </div>
 
           <div className="pt-2 flex justify-end gap-2.5">
-            {!isFirstLoginMandatory && (
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2.5 bg-white hover:bg-gray-100 text-[#233146] font-bold rounded-xl text-xs sm:text-sm border border-[#E8DEDA] cursor-pointer transition-colors"
-              >
-                Hủy
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2.5 bg-white hover:bg-gray-100 text-[#233146] font-bold rounded-xl text-xs sm:text-sm border border-[#E8DEDA] cursor-pointer transition-colors"
+            >
+              Hủy
+            </button>
             <button
               type="submit"
               className="px-5 py-2.5 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md shadow-[#922235]/20 cursor-pointer transition-all flex items-center gap-1.5"

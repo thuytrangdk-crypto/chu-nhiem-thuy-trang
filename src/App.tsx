@@ -122,7 +122,6 @@ export default function App() {
   const [isClassSwitchOpen, setIsClassSwitchOpen] = useState(false);
   const [isSupabaseModalOpen, setIsSupabaseModalOpen] = useState(false);
   const [isTeacherPasswordModalOpen, setIsTeacherPasswordModalOpen] = useState(false);
-  const [mandatoryChangeStudentId, setMandatoryChangeStudentId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   // Supabase cloud sync status
@@ -416,7 +415,7 @@ export default function App() {
     showToast(`Xin chào cô ${state.config.teacherName}`);
   };
 
-  const handleLoginStudent = (studentId: string, isFirstTimeInitialPassword?: boolean) => {
+  const handleLoginStudent = (studentId: string) => {
     setAuthRole('student');
     setAuthStudentId(studentId);
     setSelectedStudentId(null);
@@ -427,10 +426,6 @@ export default function App() {
     );
     const s = state.students.find((x) => x.id === studentId);
     showToast(`Xin chào học sinh ${s ? s.name : ''}`);
-
-    if (isFirstTimeInitialPassword) {
-      setMandatoryChangeStudentId(studentId);
-    }
   };
 
   // Guard views: restrict student role to Board & Seating Chart and their own Profile
@@ -1385,22 +1380,6 @@ export default function App() {
             }}
             onClose={() => setIsTeacherPasswordModalOpen(false)}
           />
-
-          {/* Mandatory First-Time Student Password Change Modal */}
-          {mandatoryChangeStudentId && (
-            <ChangePasswordModal
-              isOpen={!!mandatoryChangeStudentId}
-              title="Đổi mật khẩu lần đầu"
-              description="Yêu cầu bảo mật cho học sinh lớp 8A3"
-              isFirstLoginMandatory={true}
-              onSave={(newPass) => {
-                handleChangePassword(mandatoryChangeStudentId, newPass, true);
-                setMandatoryChangeStudentId(null);
-                showToast('Chúc mừng em đã đổi mật khẩu cá nhân thành công!');
-              }}
-              onClose={() => setMandatoryChangeStudentId(null)}
-            />
-          )}
 
           {/* Supabase Cloud Connection & Sync Modal */}
           <SupabaseModal
