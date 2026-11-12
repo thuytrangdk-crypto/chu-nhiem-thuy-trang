@@ -63,43 +63,6 @@ export const supabaseService = {
 
   // Fetch state from Supabase
   async loadState(): Promise<{ state: AppState | null; isTableReady: boolean; error?: string }> {
-    const role = getVerifiedSessionRole();
-
-    // If current user is student, prioritize loading from safe public view
-    if (role === 'student') {
-      try {
-        const { data: viewData, error: viewErr } = await supabase
-          .from('view_thong_tin_lop_cong_khai')
-          .select('*')
-          .maybeSingle();
-
-        if (!viewErr && viewData) {
-          // Construct sanitized student view state: ZERO access to teacher password, discipline or notes
-          const partialStudentState: Partial<AppState> = {
-            boardNotices: viewData.board_notices || [],
-            seatingChart: viewData.seating_chart || {},
-            seatingLayout: viewData.seating_layout || { groups: 4, rows: 8, seatsPerTable: 2 },
-            academicAnnouncements: viewData.academic_announcements || [],
-            config: {
-              ...DEFAULT_INITIAL_STATE.config,
-              className: viewData.class_name || '8A3',
-              schoolYear: viewData.school_year || '2026-2027',
-              teacherName: viewData.teacher_name || 'Nguyễn Thị Thùy Trang',
-              appName: 'TRỢ LÝ CHỦ NHIỆM',
-              teacherPassword: '', // REDACTED: Never sent to student
-            },
-            students: [],
-            attendance: [],
-            discipline: [],
-            notes: [],
-          };
-          return { state: partialStudentState as AppState, isTableReady: true };
-        }
-      } catch (e) {
-        // Fallback to table read if view is not yet deployed
-      }
-    }
-
     try {
       const { data, error } = await supabase
         .from(TABLE_NAME)
@@ -112,17 +75,31 @@ export const supabaseService = {
       }
 
       if (data && data.data) {
-        return { state: data.data as AppState, isTableReady: true };
+        const rawState = data.data as AppState;
+        const role = getVerifiedSessionRole();
+
+        // If current session is a student, sanitize teacher password in memory
+        if (role === 'student') {
+          const sanitizedState: AppState = {
+            ...rawState,
+            config: {
+              ...rawState.config,
+              teacherPassword: '', // Protected: never exposed to student
+            },
+          };
+          return { state: sanitizedState, isTableReady: true };
+        }
+
+        return { state: rawState, isTableReady: true };
       }
 
-      // Table exists but no record yet
       return { state: null, isTableReady: true };
     } catch (err: any) {
       return { state: null, isTableReady: false, error: err.message };
     }
   },
 
-  // Save state to Supabase - strictly rejects student sessions, uses Server-Side verification
+  // Save state to Supabase - strictly rejects student sessions, guarantees fast direct upsert
   async saveState(state: AppState): Promise<{ success: boolean; error?: string }> {
     const currentRole = getVerifiedSessionRole();
     if (currentRole === 'student') {
@@ -143,27 +120,6 @@ export const supabaseService = {
         },
       };
 
-      // 1. First attempt: Use secure Server-Side RPC (gvcn_luu_thay_doi)
-      try {
-        const { error: rpcErr } = await supabase.rpc('gvcn_luu_thay_doi', {
-          p_class_name: state.config.className || '8A3',
-          p_teacher_password: state.config.teacherPassword || '',
-          p_new_data: payloadWithMeta,
-        });
-
-        if (!rpcErr) {
-          return { success: true };
-        }
-
-        // If error is wrong password, return security error immediately!
-        if (rpcErr.message && rpcErr.message.includes('Mật khẩu Giáo viên chủ nhiệm không chính xác')) {
-          return { success: false, error: rpcErr.message };
-        }
-      } catch (rpcEx) {
-        // Fallback to direct upsert if RPC function is not yet created in Supabase
-      }
-
-      // 2. Direct table upsert fallback
       const { error } = await supabase.from(TABLE_NAME).upsert(
         {
           id: RECORD_ID,

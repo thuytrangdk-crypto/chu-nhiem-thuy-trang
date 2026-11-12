@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import {
   Users,
-  Shuffle,
   Printer,
   RotateCcw,
-  Check,
   UserPlus,
   ArrowLeftRight,
   X,
-  Sparkles,
-  Info,
-  Maximize2,
   Plus,
   Minus,
+  Search,
+  Move,
+  GripVertical,
 } from 'lucide-react';
 import { AppState, SeatingLayout, Student } from '../types';
 
@@ -38,14 +36,14 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   const layout: SeatingLayout = {
     groups: state.seatingLayout?.groups || 4,
     rows:
-      state.seatingLayout?.rows && state.seatingLayout.rows >= 8
+      state.seatingLayout?.rows && state.seatingLayout.rows >= 3
         ? state.seatingLayout.rows
         : 8,
     seatsPerTable: state.seatingLayout?.seatsPerTable || 2,
   };
   const seatingMap = state.seatingChart || {};
 
-  // Handlers to add/remove tables per row/dãy
+  // Handlers to add/remove tables per row/dãy (GVCN only)
   const handleAddRow = () => {
     if (!isTeacher) return;
     if (layout.rows >= 12) {
@@ -73,6 +71,11 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   // Selecting a seat for assignment or swap
   const [selectedSeatKey, setSelectedSeatKey] = useState<string | null>(null);
   const [swapSourceSeatKey, setSwapSourceSeatKey] = useState<string | null>(null);
+  const [searchStudentQuery, setSearchStudentQuery] = useState('');
+
+  // Drag and drop states for moving / swapping seats
+  const [draggingSeatKey, setDraggingSeatKey] = useState<string | null>(null);
+  const [dragOverSeatKey, setDragOverSeatKey] = useState<string | null>(null);
 
   // List of students who are assigned vs unassigned
   const assignedStudentIds = new Set(Object.values(seatingMap).filter(Boolean));
@@ -85,52 +88,21 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
     state.students.some((s) => s.id === id)
   ).length;
 
-  // Auto arrange students (random or gender alternating)
-  const handleAutoArrange = (mode: 'random' | 'gender') => {
-    if (!isTeacher) return;
-    const studentsToPlace = [...state.students];
-    if (mode === 'random') {
-      studentsToPlace.sort(() => Math.random() - 0.5);
-    } else {
-      const males = studentsToPlace.filter((s) => s.gender === 'Nam');
-      const females = studentsToPlace.filter((s) => s.gender === 'Nữ');
-      const alternating: Student[] = [];
-      const maxLen = Math.max(males.length, females.length);
-      for (let i = 0; i < maxLen; i++) {
-        if (i < males.length) alternating.push(males[i]);
-        if (i < females.length) alternating.push(females[i]);
-      }
-      studentsToPlace.length = 0;
-      studentsToPlace.push(...alternating);
-    }
-
-    const newMap: Record<string, string> = {};
-    let studentIdx = 0;
-
-    for (let r = 1; r <= layout.rows; r++) {
-      for (let g = 1; g <= layout.groups; g++) {
-        for (let s = 1; s <= layout.seatsPerTable; s++) {
-          const key = `g${g}-r${r}-s${s}`;
-          if (studentIdx < studentsToPlace.length) {
-            newMap[key] = studentsToPlace[studentIdx].id;
-            studentIdx++;
-          }
-        }
-      }
-    }
-
-    onUpdateSeatingChart(newMap);
-    onShowToast(`Đã tự động xếp chỗ cho ${studentIdx} học sinh`);
-  };
-
+  // Clear seating with explicit confirmation
   const handleClearSeating = () => {
     if (!isTeacher) return;
+    const confirmed = window.confirm(
+      'Thầy/Cô có chắc chắn muốn xóa toàn bộ sơ đồ chỗ ngồi của lớp không?\n\nThao tác này sẽ gỡ toàn bộ học sinh khỏi các vị trí ghế.'
+    );
+    if (!confirmed) return;
+
     onUpdateSeatingChart({});
     setSelectedSeatKey(null);
     setSwapSourceSeatKey(null);
-    onShowToast('Đã xóa trắng sơ đồ chỗ ngồi');
+    onShowToast('Đã xóa toàn bộ sơ đồ chỗ ngồi');
   };
 
+  // Handle clicking on a seat
   const handleSeatClick = (seatKey: string) => {
     if (!isTeacher) {
       const studentId = seatingMap[seatKey];
@@ -139,22 +111,25 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
           onSelectStudent(studentId);
         } else {
           const seatedStudent = state.students.find((s) => s.id === studentId);
-          onShowToast(`Chỗ ngồi của bạn ${seatedStudent ? seatedStudent.name : ''}. (Tài khoản Học sinh: Chế độ chỉ xem)`);
+          onShowToast(
+            `Chỗ ngồi của bạn ${seatedStudent ? seatedStudent.name : ''}. (Tài khoản Học sinh: Chế độ chỉ xem)`
+          );
         }
       }
       return;
     }
 
-    // If currently in swap mode
+    // If currently in click-to-swap mode
     if (swapSourceSeatKey) {
       if (swapSourceSeatKey === seatKey) {
         setSwapSourceSeatKey(null);
         return;
       }
-      // Perform swap
+      // Perform swap / move
       const sourceStudent = seatingMap[swapSourceSeatKey];
       const targetStudent = seatingMap[seatKey];
       const updated = { ...seatingMap };
+
       if (sourceStudent) updated[seatKey] = sourceStudent;
       else delete updated[seatKey];
 
@@ -164,21 +139,38 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
       onUpdateSeatingChart(updated);
       setSwapSourceSeatKey(null);
       setSelectedSeatKey(null);
-      onShowToast('Đã đổi vị trí 2 chỗ ngồi');
+      onShowToast(
+        targetStudent
+          ? 'Đã hoán đổi vị trí giữa 2 học sinh'
+          : 'Đã chuyển học sinh sang vị trí mới'
+      );
       return;
     }
 
+    // Open assignment/reassignment modal
     setSelectedSeatKey(seatKey);
+    setSearchStudentQuery('');
   };
 
+  // Assign student to selected seat
   const handleAssignStudent = (studentId: string) => {
     if (!isTeacher || !selectedSeatKey) return;
-    const updated = { ...seatingMap, [selectedSeatKey]: studentId };
+    const updated = { ...seatingMap };
+
+    // If this student was already seated somewhere else, clear that seat
+    Object.keys(updated).forEach((key) => {
+      if (updated[key] === studentId && key !== selectedSeatKey) {
+        delete updated[key];
+      }
+    });
+
+    updated[selectedSeatKey] = studentId;
     onUpdateSeatingChart(updated);
     setSelectedSeatKey(null);
     onShowToast('Đã xếp học sinh vào chỗ ngồi');
   };
 
+  // Remove student from a seat
   const handleRemoveStudentFromSeat = (seatKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isTeacher) return;
@@ -186,20 +178,81 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
     delete updated[seatKey];
     onUpdateSeatingChart(updated);
     if (selectedSeatKey === seatKey) setSelectedSeatKey(null);
-    onShowToast('Đã bỏ học sinh khỏi chỗ ngồi');
+    if (swapSourceSeatKey === seatKey) setSwapSourceSeatKey(null);
+    onShowToast('Đã gỡ học sinh khỏi chỗ ngồi');
   };
 
+  // Start click-to-swap mode
   const handleStartSwap = (seatKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isTeacher) return;
     setSwapSourceSeatKey(seatKey);
     setSelectedSeatKey(null);
-    onShowToast('Chọn chỗ ngồi thứ hai để hoán đổi');
+    onShowToast('Chọn chỗ ngồi thứ hai để hoán đổi vị trí');
+  };
+
+  // HTML5 Drag and Drop handlers
+  const handleDragStart = (seatKey: string, e: React.DragEvent) => {
+    if (!isTeacher) return;
+    setDraggingSeatKey(seatKey);
+    e.dataTransfer.setData('text/plain', seatKey);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (seatKey: string, e: React.DragEvent) => {
+    if (!isTeacher || !draggingSeatKey) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverSeatKey !== seatKey) {
+      setDragOverSeatKey(seatKey);
+    }
+  };
+
+  const handleDragLeave = (seatKey: string) => {
+    if (dragOverSeatKey === seatKey) {
+      setDragOverSeatKey(null);
+    }
+  };
+
+  const handleDrop = (targetSeatKey: string, e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverSeatKey(null);
+    const sourceSeatKey = draggingSeatKey || e.dataTransfer.getData('text/plain');
+    setDraggingSeatKey(null);
+
+    if (!isTeacher || !sourceSeatKey || sourceSeatKey === targetSeatKey) return;
+
+    const sourceStudent = seatingMap[sourceSeatKey];
+    if (!sourceStudent) return;
+    const targetStudent = seatingMap[targetSeatKey];
+
+    const updated = { ...seatingMap };
+    updated[targetSeatKey] = sourceStudent;
+
+    if (targetStudent) {
+      updated[sourceSeatKey] = targetStudent;
+      onShowToast('Đã hoán đổi vị trí giữa 2 học sinh');
+    } else {
+      delete updated[sourceSeatKey];
+      onShowToast('Đã chuyển học sinh sang vị trí mới');
+    }
+
+    onUpdateSeatingChart(updated);
+    setSelectedSeatKey(null);
+    setSwapSourceSeatKey(null);
   };
 
   const handlePrint = () => {
     window.print();
   };
+
+  // Filter students in assignment modal
+  const filteredUnassigned = unassignedStudents.filter((s) =>
+    s.name.toLowerCase().includes(searchStudentQuery.toLowerCase().trim())
+  );
+  const filteredAllStudents = state.students.filter((s) =>
+    s.name.toLowerCase().includes(searchStudentQuery.toLowerCase().trim())
+  );
 
   return (
     <div className="space-y-5 animate-fadeIn">
@@ -211,18 +264,23 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
               Sơ đồ Chỗ ngồi Lớp {state.config.className}
             </h3>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]">
-              {occupiedCount}/{totalSeats} chỗ
+              {occupiedCount}/{totalSeats} chỗ đã xếp
             </span>
           </div>
           <p className="text-xs text-[#697589] mt-0.5">
-            Mô hình: {layout.groups} tổ/dãy • {layout.rows} hàng bàn • Bàn đôi (2 học sinh/bàn)
+            Mô hình: {layout.groups} tổ (dãy) • {layout.rows} hàng bàn • Bàn đôi (2 học sinh/bàn)
+            {isTeacher && (
+              <span className="ml-2 text-[#922235] font-semibold">
+                • Hỗ trợ kéo thả học sinh hoặc bấm nút đổi chỗ
+              </span>
+            )}
           </p>
         </div>
 
         {isTeacher ? (
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {/* Table Rows Control */}
-            <div className="flex items-center gap-1 bg-[#FFF8F4] border border-[#E8DEDA] rounded-xl px-2 py-1 text-xs">
+            <div className="flex items-center gap-1 bg-[#FFF8F4] border border-[#E8DEDA] rounded-xl px-2.5 py-1.5 text-xs">
               <span className="font-bold text-[#697589] mr-1">Quy mô:</span>
               <button
                 type="button"
@@ -239,7 +297,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
               <button
                 type="button"
                 onClick={handleAddRow}
-                disabled={layout.rows >= 10}
+                disabled={layout.rows >= 12}
                 className="w-6 h-6 flex items-center justify-center rounded-lg bg-white border border-[#E8DEDA] text-[#233146] hover:bg-[#F5EDEB] disabled:opacity-40 disabled:cursor-not-allowed font-bold cursor-pointer transition-colors shadow-2xs"
                 title="Thêm 1 bàn mỗi dãy"
               >
@@ -247,31 +305,11 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
               </button>
             </div>
 
-            {/* Auto Arrange Random */}
-            <button
-              onClick={() => handleAutoArrange('random')}
-              className="px-3 py-2 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] text-xs font-bold rounded-xl border border-[#E8DEDA] flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              title="Xếp ngẫu nhiên danh sách vào các chỗ"
-            >
-              <Shuffle className="w-3.5 h-3.5 text-[#922235]" />
-              <span>Xếp ngẫu nhiên</span>
-            </button>
-
-            {/* Auto Arrange Gender */}
-            <button
-              onClick={() => handleAutoArrange('gender')}
-              className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
-              title="Xếp xen kẽ nam và nữ"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Xen kẽ Nam - Nữ</span>
-            </button>
-
-            {/* Clear All */}
+            {/* Clear All with confirmation */}
             <button
               onClick={handleClearSeating}
-              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors cursor-pointer shadow-2xs"
-              title="Xóa sơ đồ để xếp lại"
+              className="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors cursor-pointer shadow-2xs flex items-center gap-1.5"
+              title="Xóa sơ đồ sau khi xác nhận"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Xóa sơ đồ</span>
@@ -290,7 +328,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
         ) : (
           <div className="flex items-center gap-2.5">
             <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA]">
-              Chế độ xem sơ đồ
+              Chế độ xem sơ đồ (Chỉ xem)
             </span>
             <button
               onClick={handlePrint}
@@ -304,17 +342,18 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
         )}
       </div>
 
+      {/* Swap Mode Callout Banner */}
       {swapSourceSeatKey && isTeacher && (
-        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-800 font-bold">
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-800 font-bold animate-fadeIn">
           <div className="flex items-center gap-2">
             <ArrowLeftRight className="w-4 h-4 text-amber-600 animate-pulse" />
             <span>
-              Đang chọn chế độ hoán đổi. Vui lòng bấm vào chỗ ngồi thứ 2 để đổi chỗ!
+              Đang chọn chế độ hoán đổi. Vui lòng bấm vào chỗ ngồi thứ hai (hoặc ghế trống) để chuyển/đổi chỗ!
             </span>
           </div>
           <button
             onClick={() => setSwapSourceSeatKey(null)}
-            className="text-amber-900 underline cursor-pointer text-xs"
+            className="text-amber-900 underline cursor-pointer text-xs font-bold"
           >
             Hủy hoán đổi
           </button>
@@ -372,16 +411,30 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                               );
                               const isSelected = selectedSeatKey === seatKey;
                               const isSwapSource = swapSourceSeatKey === seatKey;
-                              const isMySeat = !isTeacher && student && student.id === currentStudentId;
+                              const isDragging = draggingSeatKey === seatKey;
+                              const isDragOver = dragOverSeatKey === seatKey;
+                              const isMySeat =
+                                !isTeacher && student && student.id === currentStudentId;
 
                               return (
                                 <div
                                   key={seatKey}
+                                  draggable={isTeacher && !!student}
+                                  onDragStart={(e) => handleDragStart(seatKey, e)}
+                                  onDragOver={(e) => handleDragOver(seatKey, e)}
+                                  onDragLeave={() => handleDragLeave(seatKey)}
+                                  onDrop={(e) => handleDrop(seatKey, e)}
                                   onClick={() => handleSeatClick(seatKey)}
-                                  className={`rounded-xl p-2 border transition-all relative min-h-[76px] flex flex-col justify-between ${
-                                    isTeacher || isMySeat ? 'cursor-pointer' : 'cursor-default'
+                                  className={`rounded-xl p-2 border transition-all relative min-h-[76px] flex flex-col justify-between select-none ${
+                                    isTeacher || isMySeat
+                                      ? 'cursor-pointer'
+                                      : 'cursor-default'
                                   } ${
-                                    isMySeat
+                                    isDragOver
+                                      ? 'border-[#922235] bg-[#F5EDEB] ring-2 ring-[#922235] scale-[1.03] shadow-md z-10'
+                                      : isDragging
+                                      ? 'opacity-40 border-dashed border-[#922235]'
+                                      : isMySeat
                                       ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-400 shadow-xs'
                                       : isSwapSource
                                       ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-300 animate-pulse'
@@ -389,12 +442,21 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                       ? 'border-[#922235] bg-[#F5EDEB] ring-2 ring-[#922235]/30'
                                       : student
                                       ? student.gender === 'Nam'
-                                        ? 'border-blue-100 bg-blue-50/20 hover:border-[#922235]/40'
-                                        : 'border-rose-100 bg-rose-50/20 hover:border-[#922235]/40'
+                                        ? 'border-blue-100 bg-blue-50/20 hover:border-[#922235]/40 hover:shadow-2xs'
+                                        : 'border-rose-100 bg-rose-50/20 hover:border-[#922235]/40 hover:shadow-2xs'
                                       : isTeacher
-                                      ? 'border-dashed border-[#E8DEDA] hover:border-[#922235]/40 bg-gray-50/40 hover:bg-[#F5EDEB]/30'
+                                      ? 'border-dashed border-[#E8DEDA] hover:border-[#922235]/60 bg-gray-50/40 hover:bg-[#F5EDEB]/40'
                                       : 'border-dashed border-[#E8DEDA]/60 bg-gray-50/20'
                                   }`}
+                                  title={
+                                    isTeacher && student
+                                      ? `${student.name} (Kéo thả để chuyển chỗ hoặc bấm để thay đổi)`
+                                      : isTeacher
+                                      ? 'Bấm để xếp học sinh vào ghế này'
+                                      : student
+                                      ? student.name
+                                      : 'Ghế trống'
+                                  }
                                 >
                                   {student ? (
                                     <>
@@ -427,29 +489,38 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                         </div>
                                       </div>
 
-                                      {/* Teacher seat controls */}
+                                      {/* Teacher seat action controls */}
                                       {isTeacher && (
-                                        <div className="flex items-center justify-end gap-1 mt-1 pt-1 border-t border-gray-100">
-                                          <button
-                                            type="button"
-                                            onClick={(e) =>
-                                              handleStartSwap(seatKey, e)
-                                            }
-                                            className="text-[9px] text-blue-600 hover:text-blue-800 font-bold px-1 rounded hover:bg-blue-100 transition-colors"
-                                            title="Đổi chỗ này với chỗ khác"
+                                        <div className="flex items-center justify-between gap-1 mt-1 pt-1 border-t border-gray-100">
+                                          <span
+                                            className="text-[9px] text-gray-400 font-medium flex items-center gap-0.5 cursor-grab active:cursor-grabbing"
+                                            title="Kéo thả học sinh này"
                                           >
-                                            <ArrowLeftRight className="w-2.5 h-2.5" />
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={(e) =>
-                                              handleRemoveStudentFromSeat(seatKey, e)
-                                            }
-                                            className="text-[9px] text-gray-400 hover:text-red-600 p-0.5 rounded"
-                                            title="Bỏ học sinh khỏi chỗ"
-                                          >
-                                            <X className="w-2.5 h-2.5" />
-                                          </button>
+                                            <GripVertical className="w-2.5 h-2.5" />
+                                          </span>
+
+                                          <div className="flex items-center gap-1">
+                                            <button
+                                              type="button"
+                                              onClick={(e) =>
+                                                handleStartSwap(seatKey, e)
+                                              }
+                                              className="text-[9px] text-[#922235] hover:text-[#781C2B] font-bold px-1 py-0.5 rounded hover:bg-[#F5EDEB] transition-colors cursor-pointer"
+                                              title="Hoán đổi chỗ này với chỗ khác"
+                                            >
+                                              <ArrowLeftRight className="w-2.5 h-2.5" />
+                                            </button>
+                                            <button
+                                              type="button"
+                                              onClick={(e) =>
+                                                handleRemoveStudentFromSeat(seatKey, e)
+                                              }
+                                              className="text-[9px] text-gray-400 hover:text-red-600 p-0.5 rounded hover:bg-red-50 transition-colors cursor-pointer"
+                                              title="Gỡ học sinh khỏi chỗ này"
+                                            >
+                                              <X className="w-2.5 h-2.5" />
+                                            </button>
+                                          </div>
                                         </div>
                                       )}
                                     </>
@@ -490,90 +561,148 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
         </div>
       </div>
 
-      {/* Drawer / Popover: Assign Student to Selected Seat */}
+      {/* Drawer / Popover: Assign Student to Selected Seat (GVCN only) */}
       {selectedSeatKey && isTeacher && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="p-4 border-b border-gray-100 bg-blue-50/50 flex justify-between items-center">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[85vh] border border-[#E8DEDA]">
+            <div className="p-4 border-b border-[#E8DEDA] bg-gradient-to-r from-[#F5EDEB] to-[#FFF8F4] flex justify-between items-center">
               <div>
-                <h4 className="font-bold text-gray-900 text-sm">
+                <h4 className="font-black text-[#233146] text-sm uppercase">
                   Chọn học sinh vào chỗ ngồi
                 </h4>
-                <p className="text-[11px] text-gray-500">
-                  Vị trí:{' '}
-                  <strong className="text-blue-700 uppercase">
+                <p className="text-[11px] text-[#697589] font-medium">
+                  Vị trí bàn:{' '}
+                  <strong className="text-[#922235] uppercase font-bold">
                     {selectedSeatKey}
                   </strong>
                 </p>
               </div>
               <button
                 onClick={() => setSelectedSeatKey(null)}
-                className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 text-gray-400 flex items-center justify-center cursor-pointer"
+                className="w-7 h-7 rounded-full bg-white hover:bg-gray-100 text-gray-400 flex items-center justify-center cursor-pointer border border-[#E8DEDA]"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-4 flex-1 overflow-y-auto space-y-2">
-              <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                Học sinh chưa xếp chỗ ({unassignedStudents.length}):
-              </p>
-
-              {unassignedStudents.length === 0 ? (
-                <div className="p-6 text-center text-gray-400 text-xs">
-                  Tất cả học sinh trong lớp đều đã được xếp chỗ ngồi!
-                </div>
-              ) : (
-                unassignedStudents.map((s) => (
-                  <div
-                    key={s.id}
-                    onClick={() => handleAssignStudent(s.id)}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-gray-200 hover:border-blue-400 hover:bg-blue-50/50 transition-colors cursor-pointer"
+            {/* Quick Search Box */}
+            <div className="p-3 border-b border-gray-100 bg-white">
+              <div className="flex items-center gap-2 px-3 py-2 bg-[#FFF8F4] border border-[#E8DEDA] rounded-xl text-xs">
+                <Search className="w-3.5 h-3.5 text-[#922235]" />
+                <input
+                  type="text"
+                  value={searchStudentQuery}
+                  onChange={(e) => setSearchStudentQuery(e.target.value)}
+                  placeholder="Tìm học sinh theo tên..."
+                  className="bg-transparent flex-1 outline-none text-[#233146] font-medium"
+                />
+                {searchStudentQuery && (
+                  <button
+                    onClick={() => setSearchStudentQuery('')}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    <div className="flex items-center gap-2.5">
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="p-4 flex-1 overflow-y-auto space-y-3 custom-scrollbar">
+              {/* Unassigned Students section */}
+              <div>
+                <p className="text-xs font-bold text-[#697589] uppercase tracking-wider mb-2 flex items-center justify-between">
+                  <span>Học sinh chưa xếp chỗ ({unassignedStudents.length})</span>
+                  {unassignedStudents.length > 0 && (
+                    <span className="text-[10px] text-[#922235] font-semibold lowercase">
+                      (ưu tiên chọn)
+                    </span>
+                  )}
+                </p>
+
+                {unassignedStudents.length === 0 ? (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center text-emerald-800 text-xs font-semibold">
+                    ✓ Tất cả 44 học sinh trong lớp đều đã được xếp chỗ ngồi!
+                  </div>
+                ) : filteredUnassigned.length === 0 ? (
+                  <div className="p-3 text-center text-gray-400 text-xs">
+                    Không tìm thấy học sinh chưa xếp chỗ phù hợp với từ khóa.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {filteredUnassigned.map((s) => (
                       <div
-                        className={`w-7 h-7 rounded-lg text-white font-bold text-xs flex items-center justify-center ${
-                          s.gender === 'Nam' ? 'bg-blue-600' : 'bg-pink-600'
+                        key={s.id}
+                        onClick={() => handleAssignStudent(s.id)}
+                        className="flex items-center justify-between p-2.5 rounded-xl border border-[#E8DEDA] hover:border-[#922235] hover:bg-[#F5EDEB]/60 transition-colors cursor-pointer group shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-7 h-7 rounded-lg text-white font-bold text-xs flex items-center justify-center shrink-0 ${
+                              s.gender === 'Nam' ? 'bg-blue-600' : 'bg-pink-600'
+                            }`}
+                          >
+                            {s.name.charAt(0)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-[#233146] uppercase break-words leading-snug group-hover:text-[#922235]">
+                              {s.name}
+                            </p>
+                            <span className="text-[10px] text-[#697589] font-mono">
+                              Mã: {s.studentCode || s.id} • {s.gender}
+                            </span>
+                          </div>
+                        </div>
+                        <button className="px-2.5 py-1 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-lg text-[11px] cursor-pointer shadow-2xs">
+                          Xếp vào ghế
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Reassign from all students */}
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-xs font-bold text-[#697589] uppercase tracking-wider mb-2">
+                  Hoặc chuyển học sinh từ vị trí khác ({state.students.length} em):
+                </p>
+                <div className="space-y-1 max-h-48 overflow-y-auto custom-scrollbar">
+                  {filteredAllStudents.map((s) => {
+                    const currentSeat = Object.keys(seatingMap).find(
+                      (k) => seatingMap[k] === s.id
+                    );
+                    const isAlreadyInSelectedSeat = currentSeat === selectedSeatKey;
+
+                    return (
+                      <div
+                        key={s.id}
+                        onClick={() => {
+                          if (!isAlreadyInSelectedSeat) {
+                            handleAssignStudent(s.id);
+                          }
+                        }}
+                        className={`flex items-center justify-between p-2 rounded-xl border text-xs transition-colors ${
+                          isAlreadyInSelectedSeat
+                            ? 'bg-[#F5EDEB] border-[#922235]/40 text-[#922235] cursor-default'
+                            : 'border-transparent hover:border-[#E8DEDA] hover:bg-[#FFF8F4] cursor-pointer text-[#233146]'
                         }`}
                       >
-                        {s.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-gray-900 uppercase break-words leading-snug">
-                          {s.name}
-                        </p>
-                        <span className="text-[10px] text-gray-400 font-mono">
-                          ID: {s.id} • {s.gender}
+                        <div className="flex items-center gap-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#922235]" />
+                          <span className="font-bold uppercase text-[11px]">
+                            {s.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-semibold text-[#697589]">
+                          {isAlreadyInSelectedSeat
+                            ? '(Đang ngồi ghế này)'
+                            : currentSeat
+                            ? `Đang ngồi: ${currentSeat}`
+                            : 'Chưa có chỗ'}
                         </span>
                       </div>
-                    </div>
-                    <button className="px-2.5 py-1 bg-blue-600 text-white font-bold rounded-lg text-[11px] cursor-pointer">
-                      Chọn
-                    </button>
-                  </div>
-                ))
-              )}
-
-              {/* Also allow reassigning any student from class */}
-              <div className="pt-4 border-t border-gray-100">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                  Hoặc chọn từ tất cả học sinh:
-                </p>
-                <div className="space-y-1.5 max-h-48 overflow-y-auto">
-                  {state.students.map((s) => (
-                    <div
-                      key={s.id}
-                      onClick={() => handleAssignStudent(s.id)}
-                      className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 cursor-pointer text-xs"
-                    >
-                      <span className="font-semibold text-gray-800 uppercase">
-                        {s.name}
-                      </span>
-                      <span className="text-[10px] text-blue-600 font-bold">
-                        Đổi vào đây
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -178,26 +178,32 @@ export default function App() {
               lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
             }));
           } else {
-            // Apply remote state
-            setState((prev) => ({
-              ...prev,
-              ...remoteState,
-              config: {
-                ...prev.config,
-                ...remoteState.config,
-              },
-            }));
-            latestStateRef.current = {
-              ...latestStateRef.current,
-              ...remoteState,
-              config: {
-                ...latestStateRef.current.config,
-                ...remoteState.config,
-              },
-            };
-            try {
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteState));
-            } catch (e) {}
+            // Apply remote state safely preserving populated seating chart
+            setState((prev) => {
+              const safeSeatingChart =
+                remoteState.seatingChart &&
+                Object.keys(remoteState.seatingChart).length > 0
+                  ? remoteState.seatingChart
+                  : prev.seatingChart &&
+                    Object.keys(prev.seatingChart).length > 0
+                  ? prev.seatingChart
+                  : {};
+
+              const merged = {
+                ...prev,
+                ...remoteState,
+                seatingChart: safeSeatingChart,
+                config: {
+                  ...prev.config,
+                  ...remoteState.config,
+                },
+              };
+              latestStateRef.current = merged;
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+              } catch (e) {}
+              return merged;
+            });
             setSyncStatus((prev) => ({
               ...prev,
               lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
@@ -212,18 +218,28 @@ export default function App() {
             const currentTs = latestStateRef.current._syncMeta?.timestamp || 0;
 
             if (remoteTs > currentTs) {
-              setState((prev) => ({
-                ...prev,
-                ...updatedRemote,
-                config: {
-                  ...prev.config,
-                  ...updatedRemote.config,
-                },
-              }));
-              latestStateRef.current = updatedRemote;
-              try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedRemote));
-              } catch (e) {}
+              setState((prev) => {
+                const safeSeatingChart =
+                  updatedRemote.seatingChart &&
+                  Object.keys(updatedRemote.seatingChart).length > 0
+                    ? updatedRemote.seatingChart
+                    : prev.seatingChart;
+
+                const merged = {
+                  ...prev,
+                  ...updatedRemote,
+                  seatingChart: safeSeatingChart,
+                  config: {
+                    ...prev.config,
+                    ...updatedRemote.config,
+                  },
+                };
+                latestStateRef.current = merged;
+                try {
+                  localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+                } catch (e) {}
+                return merged;
+              });
               setSyncStatus((prev) => ({
                 ...prev,
                 lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
