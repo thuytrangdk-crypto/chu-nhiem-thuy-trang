@@ -250,9 +250,10 @@ export const calculateConduct = (
 
 export const resizeImageBase64 = (
   file: File,
-  maxWidth: number,
-  maxHeight: number,
-  callback: (base64: string) => void
+  maxWidth = 640,
+  maxHeight = 640,
+  callback: (base64: string) => void,
+  quality = 0.65
 ) => {
   const reader = new FileReader();
   reader.onload = (e) => {
@@ -277,7 +278,7 @@ export const resizeImageBase64 = (
       const ctx = canvas.getContext('2d');
       if (ctx) {
         ctx.drawImage(img, 0, 0, width, height);
-        callback(canvas.toDataURL('image/jpeg', 0.8));
+        callback(canvas.toDataURL('image/jpeg', quality));
       }
     };
     img.src = e.target?.result as string;

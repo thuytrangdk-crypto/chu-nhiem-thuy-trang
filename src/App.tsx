@@ -316,19 +316,31 @@ export default function App() {
       }
 
       if (syncImmediately) {
-        supabaseService.saveState(nextState).then((res) => {
-          if (res.success) {
-            setSyncStatus((s) => ({
-              ...s,
-              isConnected: true,
-              isTableReady: true,
-              lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
-              errorMessage: null,
-            }));
-          } else {
-            console.warn('Supabase save state error:', res.error);
+        // Enforce verified session role: only GVCN can sync state mutations to Supabase
+        const isSessionTeacher = (() => {
+          try {
+            const raw = sessionStorage.getItem(SESSION_AUTH_KEY);
+            return raw ? JSON.parse(raw)?.role === 'teacher' : false;
+          } catch {
+            return false;
           }
-        });
+        })();
+
+        if (isSessionTeacher) {
+          supabaseService.saveState(nextState).then((res) => {
+            if (res.success) {
+              setSyncStatus((s) => ({
+                ...s,
+                isConnected: true,
+                isTableReady: true,
+                lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
+                errorMessage: null,
+              }));
+            } else {
+              console.warn('Supabase save state error:', res.error);
+            }
+          });
+        }
       }
 
       return nextState;
@@ -355,6 +367,10 @@ export default function App() {
   };
 
   const handleUpdateSeatingChart = (newChart: Record<string, string>) => {
+    if (authRole !== 'teacher') {
+      showToast('Chỉ giáo viên chủ nhiệm mới có quyền thay đổi sơ đồ chỗ ngồi!', 'error');
+      return;
+    }
     updateAppState((prev) => ({
       ...prev,
       seatingChart: newChart,
@@ -362,6 +378,10 @@ export default function App() {
   };
 
   const handleUpdateSeatingLayout = (newLayout: SeatingLayout) => {
+    if (authRole !== 'teacher') {
+      showToast('Chỉ giáo viên chủ nhiệm mới có quyền thay đổi cấu trúc sơ đồ lớp!', 'error');
+      return;
+    }
     updateAppState((prev) => ({
       ...prev,
       seatingLayout: newLayout,
@@ -787,6 +807,10 @@ export default function App() {
 
   // Board Notices Handlers
   const handleAddNotice = (notice: Omit<BoardNotice, 'id'>) => {
+    if (authRole !== 'teacher') {
+      showToast('Chỉ giáo viên chủ nhiệm mới có quyền đăng thông tin lên bảng tin!', 'error');
+      return;
+    }
     const newNotice: BoardNotice = {
       ...notice,
       id: generateId(),
@@ -799,6 +823,10 @@ export default function App() {
   };
 
   const handleUpdateNotice = (updatedNotice: BoardNotice) => {
+    if (authRole !== 'teacher') {
+      showToast('Chỉ giáo viên chủ nhiệm mới có quyền chỉnh sửa thông báo!', 'error');
+      return;
+    }
     updateAppState((prev) => ({
       ...prev,
       boardNotices: prev.boardNotices.map((n) =>
@@ -809,6 +837,10 @@ export default function App() {
   };
 
   const handleDeleteNotice = (noticeId: string) => {
+    if (authRole !== 'teacher') {
+      showToast('Chỉ giáo viên chủ nhiệm mới có quyền xóa thông báo!', 'error');
+      return;
+    }
     updateAppState((prev) => ({
       ...prev,
       boardNotices: prev.boardNotices.filter((n) => n.id !== noticeId),

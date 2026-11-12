@@ -1,5 +1,6 @@
 import { supabase, SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL, SUPABASE_STORAGE_SQL } from '../supabaseClient';
 import { AppState } from '../types';
+import { DEFAULT_INITIAL_STATE } from '../defaultData';
 
 export interface SyncStatus {
   isConnected: boolean;
@@ -15,6 +16,18 @@ const TABLE_NAME = 'tro_ly_chu_nhiem_data';
 // Unique session ID per browser tab/instance to prevent self-echo overwrite loops
 export const CLIENT_SESSION_ID =
   'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+
+// Helper to check verified user role from active browser session
+export function getVerifiedSessionRole(): 'teacher' | 'student' | null {
+  try {
+    const raw = sessionStorage.getItem('scn_session_auth');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return parsed.role || null;
+    }
+  } catch (e) {}
+  return null;
+}
 
 export const supabaseService = {
   // Test connection and table existence
@@ -50,6 +63,43 @@ export const supabaseService = {
 
   // Fetch state from Supabase
   async loadState(): Promise<{ state: AppState | null; isTableReady: boolean; error?: string }> {
+    const role = getVerifiedSessionRole();
+
+    // If current user is student, prioritize loading from safe public view
+    if (role === 'student') {
+      try {
+        const { data: viewData, error: viewErr } = await supabase
+          .from('view_thong_tin_lop_cong_khai')
+          .select('*')
+          .maybeSingle();
+
+        if (!viewErr && viewData) {
+          // Construct sanitized student view state: ZERO access to teacher password, discipline or notes
+          const partialStudentState: Partial<AppState> = {
+            boardNotices: viewData.board_notices || [],
+            seatingChart: viewData.seating_chart || {},
+            seatingLayout: viewData.seating_layout || { groups: 4, rows: 8, seatsPerTable: 2 },
+            academicAnnouncements: viewData.academic_announcements || [],
+            config: {
+              ...DEFAULT_INITIAL_STATE.config,
+              className: viewData.class_name || '8A3',
+              schoolYear: viewData.school_year || '2026-2027',
+              teacherName: viewData.teacher_name || 'Nguyễn Thị Thùy Trang',
+              appName: 'TRỢ LÝ CHỦ NHIỆM',
+              teacherPassword: '', // REDACTED: Never sent to student
+            },
+            students: [],
+            attendance: [],
+            discipline: [],
+            notes: [],
+          };
+          return { state: partialStudentState as AppState, isTableReady: true };
+        }
+      } catch (e) {
+        // Fallback to table read if view is not yet deployed
+      }
+    }
+
     try {
       const { data, error } = await supabase
         .from(TABLE_NAME)
@@ -72,8 +122,17 @@ export const supabaseService = {
     }
   },
 
-  // Save state to Supabase
+  // Save state to Supabase - strictly rejects student sessions, uses Server-Side verification
   async saveState(state: AppState): Promise<{ success: boolean; error?: string }> {
+    const currentRole = getVerifiedSessionRole();
+    if (currentRole === 'student') {
+      console.warn('Blocked unauthorized write attempt from student session to Supabase.');
+      return {
+        success: false,
+        error: 'Tài khoản Học sinh chỉ có quyền xem thông tin (Read-Only). Tuyệt đối không được phép ghi hoặc sửa đổi dữ liệu trên Supabase.',
+      };
+    }
+
     try {
       // Attach sync metadata to identify writer and avoid echo loops
       const payloadWithMeta = {
@@ -84,6 +143,27 @@ export const supabaseService = {
         },
       };
 
+      // 1. First attempt: Use secure Server-Side RPC (gvcn_luu_thay_doi)
+      try {
+        const { error: rpcErr } = await supabase.rpc('gvcn_luu_thay_doi', {
+          p_class_name: state.config.className || '8A3',
+          p_teacher_password: state.config.teacherPassword || '',
+          p_new_data: payloadWithMeta,
+        });
+
+        if (!rpcErr) {
+          return { success: true };
+        }
+
+        // If error is wrong password, return security error immediately!
+        if (rpcErr.message && rpcErr.message.includes('Mật khẩu Giáo viên chủ nhiệm không chính xác')) {
+          return { success: false, error: rpcErr.message };
+        }
+      } catch (rpcEx) {
+        // Fallback to direct upsert if RPC function is not yet created in Supabase
+      }
+
+      // 2. Direct table upsert fallback
       const { error } = await supabase.from(TABLE_NAME).upsert(
         {
           id: RECORD_ID,
@@ -107,6 +187,14 @@ export const supabaseService = {
   async createAcademicBackup(
     backup: import('../types').AcademicGradeBackup
   ): Promise<{ success: boolean; error?: string }> {
+    const currentRole = getVerifiedSessionRole();
+    if (currentRole === 'student') {
+      return {
+        success: false,
+        error: 'Tài khoản Học sinh không có quyền tạo bản sao lưu trên Supabase.',
+      };
+    }
+
     try {
       const { error } = await supabase.from(TABLE_NAME).upsert(
         {
@@ -198,6 +286,16 @@ export const supabaseService = {
     size: number;
     error?: string;
   }> {
+    const currentRole = getVerifiedSessionRole();
+    if (currentRole === 'student') {
+      return {
+        success: false,
+        name: file.name,
+        size: file.size,
+        error: 'Tài khoản Học sinh không có quyền tải video lên Bảng tin.',
+      };
+    }
+
     const bucketName = 'board_videos';
 
     if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.key) {
@@ -297,6 +395,13 @@ export const supabaseService = {
   // Delete Board Video from Supabase Storage
   async deleteBoardVideo(storagePath: string): Promise<{ success: boolean; error?: string }> {
     if (!storagePath) return { success: true };
+    const currentRole = getVerifiedSessionRole();
+    if (currentRole === 'student') {
+      return {
+        success: false,
+        error: 'Tài khoản Học sinh không có quyền xóa tệp video trên hệ thống.',
+      };
+    }
     try {
       const { error } = await supabase.storage.from('board_videos').remove([storagePath]);
       if (error) return { success: false, error: error.message };

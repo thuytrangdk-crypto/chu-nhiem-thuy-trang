@@ -47,6 +47,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
 
   // Handlers to add/remove tables per row/dãy
   const handleAddRow = () => {
+    if (!isTeacher) return;
     if (layout.rows >= 12) {
       onShowToast('Số bàn mỗi dãy tối đa là 12 bàn', 'error');
       return;
@@ -58,6 +59,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   };
 
   const handleRemoveRow = () => {
+    if (!isTeacher) return;
     if (layout.rows <= 3) {
       onShowToast('Số bàn mỗi dãy tối thiểu là 3 bàn', 'error');
       return;
@@ -85,6 +87,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
 
   // Auto arrange students (random or gender alternating)
   const handleAutoArrange = (mode: 'random' | 'gender') => {
+    if (!isTeacher) return;
     const studentsToPlace = [...state.students];
     if (mode === 'random') {
       studentsToPlace.sort(() => Math.random() - 0.5);
@@ -121,6 +124,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   };
 
   const handleClearSeating = () => {
+    if (!isTeacher) return;
     onUpdateSeatingChart({});
     setSelectedSeatKey(null);
     setSwapSourceSeatKey(null);
@@ -135,7 +139,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
           onSelectStudent(studentId);
         } else {
           const seatedStudent = state.students.find((s) => s.id === studentId);
-          onShowToast(`Chỗ ngồi của bạn ${seatedStudent ? seatedStudent.name : ''}. (Bảo mật: Học sinh chỉ xem chi tiết hồ sơ cá nhân của chính mình)`);
+          onShowToast(`Chỗ ngồi của bạn ${seatedStudent ? seatedStudent.name : ''}. (Tài khoản Học sinh: Chế độ chỉ xem)`);
         }
       }
       return;
@@ -168,7 +172,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
   };
 
   const handleAssignStudent = (studentId: string) => {
-    if (!selectedSeatKey) return;
+    if (!isTeacher || !selectedSeatKey) return;
     const updated = { ...seatingMap, [selectedSeatKey]: studentId };
     onUpdateSeatingChart(updated);
     setSelectedSeatKey(null);
@@ -177,6 +181,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
 
   const handleRemoveStudentFromSeat = (seatKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isTeacher) return;
     const updated = { ...seatingMap };
     delete updated[seatKey];
     onUpdateSeatingChart(updated);
@@ -186,6 +191,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
 
   const handleStartSwap = (seatKey: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isTeacher) return;
     setSwapSourceSeatKey(seatKey);
     setSelectedSeatKey(null);
     onShowToast('Chọn chỗ ngồi thứ hai để hoán đổi');
@@ -213,7 +219,7 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
           </p>
         </div>
 
-        {isTeacher && (
+        {isTeacher ? (
           <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             {/* Table Rows Control */}
             <div className="flex items-center gap-1 bg-[#FFF8F4] border border-[#E8DEDA] rounded-xl px-2 py-1 text-xs">
@@ -281,10 +287,24 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
               <span>In sơ đồ</span>
             </button>
           </div>
+        ) : (
+          <div className="flex items-center gap-2.5">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-[#F5EDEB] text-[#233146] border border-[#E8DEDA]">
+              Chế độ xem sơ đồ
+            </span>
+            <button
+              onClick={handlePrint}
+              className="px-3.5 py-2 bg-[#922235] hover:bg-[#781C2B] text-white text-xs font-bold rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="In sơ đồ lớp"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>In sơ đồ</span>
+            </button>
+          </div>
         )}
       </div>
 
-      {swapSourceSeatKey && (
+      {swapSourceSeatKey && isTeacher && (
         <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center justify-between text-xs text-amber-800 font-bold">
           <div className="flex items-center gap-2">
             <ArrowLeftRight className="w-4 h-4 text-amber-600 animate-pulse" />
@@ -371,7 +391,9 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                       ? student.gender === 'Nam'
                                         ? 'border-blue-100 bg-blue-50/20 hover:border-[#922235]/40'
                                         : 'border-rose-100 bg-rose-50/20 hover:border-[#922235]/40'
-                                      : 'border-dashed border-[#E8DEDA] hover:border-[#922235]/40 bg-gray-50/40 hover:bg-[#F5EDEB]/30'
+                                      : isTeacher
+                                      ? 'border-dashed border-[#E8DEDA] hover:border-[#922235]/40 bg-gray-50/40 hover:bg-[#F5EDEB]/30'
+                                      : 'border-dashed border-[#E8DEDA]/60 bg-gray-50/20'
                                   }`}
                                 >
                                   {student ? (
@@ -431,10 +453,16 @@ export const SeatingChartView: React.FC<SeatingChartViewProps> = ({
                                         </div>
                                       )}
                                     </>
-                                  ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-300 hover:text-blue-500 transition-colors py-2">
+                                  ) : isTeacher ? (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 hover:text-[#922235] transition-colors py-2">
                                       <UserPlus className="w-3.5 h-3.5 mb-0.5" />
                                       <span className="text-[10px] font-semibold">
+                                        Ghế trống
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-[#697589]/40 py-2 select-none">
+                                      <span className="text-[10px] font-medium">
                                         Ghế trống
                                       </span>
                                     </div>

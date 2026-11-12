@@ -229,6 +229,10 @@ export const BoardView: React.FC<BoardViewProps> = ({
     videoSize?: number,
     videoStoragePath?: string
   ) => {
+    if (!isTeacher) {
+      onShowToast?.('Chỉ giáo viên chủ nhiệm mới có quyền đăng hoặc sửa thông tin!', 'error');
+      return;
+    }
     const noticeDate = date || new Date().toISOString().split('T')[0];
     if (noticeId && noticeToEdit && onUpdateNotice) {
       onUpdateNotice({
@@ -1066,6 +1070,11 @@ export const BoardView: React.FC<BoardViewProps> = ({
         message="Bạn có chắc chắn muốn xóa bài đăng thông báo này khỏi bảng tin lớp không? Nếu bài đăng có video lưu trên Cloud, tệp video cũng sẽ được giải phóng."
         confirmText="Xóa thông tin"
         onConfirm={() => {
+          if (!isTeacher) {
+            onShowToast?.('Chỉ giáo viên chủ nhiệm mới có quyền xóa bài đăng!', 'error');
+            setNoticeToDelete(null);
+            return;
+          }
           if (noticeToDelete) {
             const targetNotice = state.boardNotices.find((n) => n.id === noticeToDelete);
             if (targetNotice?.videoStoragePath) {

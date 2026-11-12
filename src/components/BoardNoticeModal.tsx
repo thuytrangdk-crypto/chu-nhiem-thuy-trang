@@ -219,7 +219,7 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
     if (!files || files.length === 0) return;
 
     Array.from(files).forEach((file) => {
-      resizeImageBase64(file, 1280, 1280, (base64) => {
+      resizeImageBase64(file, 640, 640, (base64) => {
         setImages((prev) => [...prev, base64]);
       });
     });
@@ -386,6 +386,8 @@ export const BoardNoticeModal: React.FC<BoardNoticeModalProps> = ({
     : false;
 
   const hasAnyVideo = !!pendingVideoFile || !!videoUrl.trim();
+
+  if (!isOpen || !isTeacher) return null;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">

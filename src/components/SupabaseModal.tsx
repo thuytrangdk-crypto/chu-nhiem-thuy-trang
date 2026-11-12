@@ -12,7 +12,7 @@ import {
   ExternalLink,
   Code2,
 } from 'lucide-react';
-import { SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL, SUPABASE_STORAGE_SQL } from '../supabaseClient';
+import { SUPABASE_CONFIG, SUPABASE_SCHEMA_SQL, SUPABASE_STORAGE_SQL, SUPABASE_RLS_SQL } from '../supabaseClient';
 import { SyncStatus } from '../services/supabaseService';
 
 interface SupabaseModalProps {
@@ -32,13 +32,16 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
   onPullRemote,
   onClose,
 }) => {
-  const [copiedType, setCopiedType] = useState<'all' | 'storage' | null>(null);
-  const [selectedSqlTab, setSelectedSqlTab] = useState<'all' | 'storage'>('all');
+  const [copiedType, setCopiedType] = useState<'all' | 'rls' | 'storage' | null>(null);
+  const [selectedSqlTab, setSelectedSqlTab] = useState<'all' | 'rls' | 'storage'>('all');
 
   if (!isOpen) return null;
 
-  const handleCopySql = (type: 'all' | 'storage') => {
-    const textToCopy = type === 'all' ? SUPABASE_SCHEMA_SQL : SUPABASE_STORAGE_SQL;
+  const handleCopySql = (type: 'all' | 'rls' | 'storage') => {
+    let textToCopy = SUPABASE_SCHEMA_SQL;
+    if (type === 'rls') textToCopy = SUPABASE_RLS_SQL;
+    else if (type === 'storage') textToCopy = SUPABASE_STORAGE_SQL;
+
     navigator.clipboard.writeText(textToCopy);
     setCopiedType(type);
     setTimeout(() => setCopiedType(null), 2500);
@@ -137,34 +140,45 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               {/* Tab Selector */}
-              <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl">
+              <div className="flex items-center gap-1.5 p-1 bg-gray-100 rounded-xl flex-wrap">
                 <button
                   type="button"
                   onClick={() => setSelectedSqlTab('all')}
                   className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     selectedSqlTab === 'all'
-                      ? 'bg-white text-blue-700 shadow-xs'
+                      ? 'bg-white text-[#922235] shadow-xs'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Toàn bộ (Bảng + Storage Video)
+                  Toàn bộ (Bảng + RLS + Storage)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedSqlTab('rls')}
+                  className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                    selectedSqlTab === 'rls'
+                      ? 'bg-white text-[#922235] shadow-xs'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Phân quyền RLS (GVCN / Học sinh)
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedSqlTab('storage')}
                   className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     selectedSqlTab === 'storage'
-                      ? 'bg-white text-blue-700 shadow-xs'
+                      ? 'bg-white text-[#922235] shadow-xs'
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Chỉ riêng Supabase Storage Video
+                  Storage Video
                 </button>
               </div>
 
               <button
                 onClick={() => handleCopySql(selectedSqlTab)}
-                className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+                className="px-3 py-1.5 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] font-bold rounded-xl text-xs flex items-center gap-1.5 transition-colors cursor-pointer border border-[#E8DEDA]"
               >
                 {copiedType === selectedSqlTab ? (
                   <>
@@ -181,8 +195,12 @@ export const SupabaseModal: React.FC<SupabaseModalProps> = ({
             </div>
 
             <div className="relative">
-              <pre className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-44 border border-slate-800">
-                {selectedSqlTab === 'all' ? SUPABASE_SCHEMA_SQL : SUPABASE_STORAGE_SQL}
+              <pre className="bg-slate-900 text-slate-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-48 border border-slate-800">
+                {selectedSqlTab === 'all'
+                  ? SUPABASE_SCHEMA_SQL
+                  : selectedSqlTab === 'rls'
+                  ? SUPABASE_RLS_SQL
+                  : SUPABASE_STORAGE_SQL}
               </pre>
             </div>
 
