@@ -13,6 +13,7 @@ import {
 } from './types';
 import { DEFAULT_INITIAL_STATE } from './defaultData';
 import { generateId, getTodayStr } from './utils/helpers';
+import { resolveDisciplinePeriod } from './utils/semesterHelpers';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginModal } from './components/LoginModal';
@@ -706,31 +707,40 @@ export default function App() {
     showToast('Đã xóa điểm danh ngày đã chọn');
   };
 
-  // Discipline Handlers (with auto sync attendance!)
-  const handleAddDiscipline = (record: Omit<DisciplineRecord, 'id'>) => {
-    const newDiscipline: DisciplineRecord = {
-      ...record,
-      id: generateId(),
-    };
-
-    // Auto sync attendance if rule name matches late/unexcused
-    const ruleLower = record.ruleName.toLowerCase();
-    let syncedStatus: AttendanceStatus | null = null;
+  // Discipline Handlers (with auto semester resolution & attendance sync)
+  const getSyncedAttendanceStatus = (ruleName: string): AttendanceStatus | null => {
+    const ruleLower = (ruleName || '').toLowerCase();
     if (ruleLower.includes('muộn') || ruleLower.includes('trễ')) {
-      syncedStatus = 'm';
-    } else if (
+      return 'm';
+    }
+    if (
       ruleLower.includes('không phép') ||
       ruleLower.includes('cúp tiết') ||
       ruleLower.includes('trốn học')
     ) {
-      syncedStatus = 'kp';
-    } else if (
+      return 'kp';
+    }
+    if (
       ruleLower.includes('nghỉ học') ||
       ruleLower.includes('vắng') ||
       ruleLower.includes('bỏ tiết')
     ) {
-      syncedStatus = 'v';
+      return 'v';
     }
+    return null;
+  };
+
+  const handleAddDiscipline = (record: Omit<DisciplineRecord, 'id'>) => {
+    const resolved = resolveDisciplinePeriod(record.date, latestStateRef.current.config);
+    const newDiscipline: DisciplineRecord = {
+      ...record,
+      id: generateId(),
+      schoolYear: record.schoolYear || resolved.schoolYear,
+      semester: record.semester || resolved.semester,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const syncedStatus = getSyncedAttendanceStatus(record.ruleName);
 
     updateAppState((prev) => {
       let nextAtt = prev.attendance;
@@ -765,6 +775,69 @@ export default function App() {
     if (syncedStatus) {
       showToast('Đã ghi nhận thi đua & tự động đồng bộ Điểm danh');
     }
+  };
+
+  const handleUpdateDiscipline = (updatedRecord: DisciplineRecord) => {
+    const resolved = resolveDisciplinePeriod(updatedRecord.date, latestStateRef.current.config);
+    const normalizedRecord: DisciplineRecord = {
+      ...updatedRecord,
+      schoolYear: updatedRecord.schoolYear || resolved.schoolYear,
+      semester: updatedRecord.semester || resolved.semester,
+      updatedAt: new Date().toISOString(),
+    };
+
+    updateAppState((prev) => {
+      const oldRecord = prev.discipline.find((d) => d.id === updatedRecord.id);
+      const nextDiscipline = prev.discipline.map((d) =>
+        d.id === updatedRecord.id ? normalizedRecord : d
+      );
+
+      let nextAtt = prev.attendance;
+      // Clean up old date attendance sync if date/student changed and no other violation remains on old date
+      if (oldRecord && (oldRecord.date !== normalizedRecord.date || oldRecord.ruleName !== normalizedRecord.ruleName)) {
+        const oldSynced = getSyncedAttendanceStatus(oldRecord.ruleName);
+        if (oldSynced) {
+          const othersOnOldDate = nextDiscipline.filter(
+            (d) => d.studentId === oldRecord.studentId && d.date === oldRecord.date && getSyncedAttendanceStatus(d.ruleName) !== null
+          );
+          if (othersOnOldDate.length === 0) {
+            nextAtt = nextAtt.filter(
+              (a) => !(a.studentId === oldRecord.studentId && a.date === oldRecord.date)
+            );
+          }
+        }
+      }
+
+      const newSyncedStatus = getSyncedAttendanceStatus(normalizedRecord.ruleName);
+      if (newSyncedStatus) {
+        const idx = nextAtt.findIndex(
+          (a) => a.studentId === normalizedRecord.studentId && a.date === normalizedRecord.date
+        );
+        if (idx > -1) {
+          nextAtt = nextAtt.map((a, i) =>
+            i === idx ? { ...a, status: newSyncedStatus } : a
+          );
+        } else {
+          nextAtt = [
+            ...nextAtt,
+            {
+              id: generateId(),
+              studentId: normalizedRecord.studentId,
+              date: normalizedRecord.date,
+              status: newSyncedStatus,
+            },
+          ];
+        }
+      }
+
+      return {
+        ...prev,
+        discipline: nextDiscipline,
+        attendance: nextAtt,
+      };
+    });
+
+    showToast('Đã cập nhật ghi nhận thi đua và tính lại điểm học kỳ tương ứng');
   };
 
   const handleDeleteDiscipline = (recordId: string) => {
@@ -1415,6 +1488,7 @@ export default function App() {
               onSaveGrades={handleSaveGrades}
               onSaveAcademicGrades={handleSaveStudentAcademicGrades}
               onAddDiscipline={handleAddDiscipline}
+              onUpdateDiscipline={handleUpdateDiscipline}
               onDeleteDiscipline={handleDeleteDiscipline}
               onDeleteAttendance={handleDeleteAttendance}
               onAddNote={handleAddNote}

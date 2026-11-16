@@ -1,6 +1,11 @@
 import * as XLSX from 'xlsx';
-import { Student, DisciplineRecord } from '../types';
+import { AppConfig, DisciplineRecord, SemesterFilter, Student } from '../types';
 import { formatDisplayDate } from './helpers';
+import {
+  filterDisciplineBySemester,
+  formatSemesterLabel,
+  getRecordPeriod,
+} from './semesterHelpers';
 
 /**
  * Sanitizes text to prevent CSV/Excel formula injection.
@@ -22,7 +27,9 @@ export interface ExportStudentViolationsOptions {
   schoolYear: string;
   teacherName: string;
   appName?: string;
-  selectedMonth: string; // 'all' or 'YYYY-MM'
+  selectedMonth?: string; // 'all' or 'YYYY-MM'
+  selectedSemester?: SemesterFilter; // 'HK1' | 'HK2' | 'ALL'
+  config?: AppConfig;
   violations: DisciplineRecord[];
 }
 
@@ -45,30 +52,27 @@ export const exportStudentViolationsToExcel = ({
   schoolYear,
   teacherName,
   appName = 'TRỢ LÝ CHỦ NHIỆM',
-  selectedMonth,
+  selectedMonth = 'all',
+  selectedSemester = 'ALL',
+  config,
   violations,
 }: ExportStudentViolationsOptions): ExportViolationsResult => {
-  // 1. Filter only violations (type: minus) belonging to this student
-  const filtered = violations.filter(
-    (d) => d.studentId === student.id && d.type === 'minus'
-  );
+  // 1. Filter by schoolYear & semester using shared semester helpers (deduplicated)
+  const semesterFiltered = filterDisciplineBySemester(
+    violations,
+    config,
+    schoolYear,
+    selectedSemester,
+    student.id
+  ).filter((d) => d.type === 'minus');
 
-  // 2. Filter by month if specified
+  // 2. Optionally filter by month if specified
   const targetRecords =
-    selectedMonth === 'all'
-      ? filtered
-      : filtered.filter((d) => d.date.startsWith(selectedMonth));
+    !selectedMonth || selectedMonth === 'all'
+      ? semesterFiltered
+      : semesterFiltered.filter((d) => d.date.startsWith(selectedMonth));
 
-  // 3. Deduplicate by record id (avoids duplicate counting if sync re-broadcasts)
-  const uniqueMap = new Map<string, DisciplineRecord>();
-  targetRecords.forEach((d) => {
-    const key = d.id || `${d.studentId}_${d.date}_${d.ruleId}_${d.points}`;
-    if (!uniqueMap.has(key)) {
-      uniqueMap.set(key, d);
-    }
-  });
-
-  const sortedViolations = Array.from(uniqueMap.values()).sort(
+  const sortedViolations = [...targetRecords].sort(
     (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)
   );
 
@@ -82,13 +86,15 @@ export const exportStudentViolationsToExcel = ({
   }
 
   // Determine period display string
-  let periodText = 'Tất cả thời gian (Cả năm học)';
-  let periodFileSuffix = 'Tat_ca';
-  if (selectedMonth !== 'all') {
+  const semesterText = formatSemesterLabel(selectedSemester);
+  let periodText = `${semesterText} (Năm học ${schoolYear})`;
+  let periodFileSuffix =
+    selectedSemester === 'HK1' ? 'HK1' : selectedSemester === 'HK2' ? 'HK2' : 'Ca_nam';
+  if (selectedMonth && selectedMonth !== 'all') {
     const [y, m] = selectedMonth.split('-');
     const mNum = Number(m);
-    periodText = `Tháng ${mNum}/${y}`;
-    periodFileSuffix = `${m}-${y}`;
+    periodText = `${semesterText} - Tháng ${mNum}/${y}`;
+    periodFileSuffix = `${periodFileSuffix}_${m}-${y}`;
   }
 
   const exportDate = new Date();
@@ -137,6 +143,7 @@ export const exportStudentViolationsToExcel = ({
   const s1Headers = [
     'STT',
     'Ngày xảy ra',
+    'Học kỳ',
     'Tên lỗi / Quy tắc',
     'Nội dung sự việc',
     'Điểm trừ',
@@ -150,10 +157,12 @@ export const exportStudentViolationsToExcel = ({
     const rawPoints = Math.abs(d.points || 0);
     const content = d.note ? sanitizeExcelText(d.note) : sanitizeExcelText(d.ruleName);
     const noteText = d.note ? sanitizeExcelText(d.note) : '';
+    const period = getRecordPeriod(d, config);
 
     s1Rows.push([
       { t: 'n', v: idx + 1 },
       { t: 's', v: formatDisplayDate(d.date) },
+      { t: 's', v: period.semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II' },
       { t: 's', v: sanitizeExcelText(d.ruleName) },
       { t: 's', v: content },
       { t: 'n', v: rawPoints },
@@ -164,6 +173,7 @@ export const exportStudentViolationsToExcel = ({
 
   // Summary row at bottom
   s1Rows.push([
+    { t: 's', v: '' },
     { t: 's', v: '' },
     { t: 's', v: '' },
     { t: 's', v: 'TỔNG CỘNG' },
@@ -179,6 +189,7 @@ export const exportStudentViolationsToExcel = ({
   ws1['!cols'] = [
     { wch: 6 },  // STT
     { wch: 14 }, // Ngày xảy ra
+    { wch: 13 }, // Học kỳ
     { wch: 28 }, // Tên lỗi / Quy tắc
     { wch: 38 }, // Nội dung sự việc
     { wch: 12 }, // Điểm trừ
@@ -189,9 +200,9 @@ export const exportStudentViolationsToExcel = ({
   // Freeze header at row 6
   ws1['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 6 }];
 
-  // Auto-filter on row 6 (A6:G{totalRows})
+  // Auto-filter on row 6 (A6:H{totalRows})
   const s1TotalRows = s1Rows.length;
-  ws1['!autofilter'] = { ref: `A6:G${s1TotalRows - 1}` };
+  ws1['!autofilter'] = { ref: `A6:H${s1TotalRows - 1}` };
 
   // ==========================================
   // SHEET 2: Tổng hợp theo lỗi

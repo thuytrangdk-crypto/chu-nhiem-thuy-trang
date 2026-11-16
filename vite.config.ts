@@ -4,17 +4,15 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
-
   return {
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {
-      port: port,
+      port: 3000,
       host: '0.0.0.0',
       strictPort: true,
       allowedHosts: true as const,
@@ -25,7 +23,7 @@ export default defineConfig(() => {
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
     preview: {
-      port: port,
+      port: 3000,
       host: '0.0.0.0',
       strictPort: true,
     },

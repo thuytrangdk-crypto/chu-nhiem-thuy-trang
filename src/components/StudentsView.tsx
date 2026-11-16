@@ -24,6 +24,7 @@ import {
   formatStudentCode,
   getTodayStr,
 } from '../utils/helpers';
+import { detectActiveSemester, filterDisciplineBySemester } from '../utils/semesterHelpers';
 import { StudentFormModal } from './StudentFormModal';
 import { ExcelImportModal } from './ExcelImportModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -102,6 +103,18 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const realStudentsCount = state.students.length - sampleStudentsCount;
 
   const today = getTodayStr();
+  const activeSemester = useMemo(() => detectActiveSemester(state.config), [state.config]);
+  const activeSemesterDiscipline = useMemo(
+    () =>
+      filterDisciplineBySemester(
+        state.discipline,
+        state.config,
+        activeSemester.schoolYear,
+        activeSemester.semester
+      ),
+    [state.discipline, state.config, activeSemester.schoolYear, activeSemester.semester]
+  );
+  const activeSemShortLabel = activeSemester.semester === 'HK1' ? 'HK I' : 'HK II';
 
   const handleStudentClick = (studentId: string) => {
     if (isTeacher || studentId === currentStudentId) {
@@ -361,10 +374,10 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           /* GRID VIEW */
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4">
             {filteredStudents.map((s, index) => {
-              const vios = state.discipline.filter(
+              const vios = activeSemesterDiscipline.filter(
                 (d) => d.studentId === s.id && d.type === 'minus'
               ).length;
-              const rews = state.discipline.filter(
+              const rews = activeSemesterDiscipline.filter(
                 (d) => d.studentId === s.id && d.type === 'plus'
               ).length;
 
@@ -495,12 +508,18 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
 
                     <div className="flex items-center gap-1.5 font-bold">
                       {rews > 0 && (
-                        <span className="text-emerald-600 flex items-center gap-0.5" title="Khen thưởng">
+                        <span
+                          className="text-emerald-600 flex items-center gap-0.5"
+                          title={`Khen thưởng (${activeSemShortLabel})`}
+                        >
                           <Award className="w-3 h-3" /> {rews}
                         </span>
                       )}
                       {vios > 0 && (
-                        <span className="text-rose-600 flex items-center gap-0.5" title="Vi phạm">
+                        <span
+                          className="text-rose-600 flex items-center gap-0.5"
+                          title={`Vi phạm (${activeSemShortLabel})`}
+                        >
                           <AlertTriangle className="w-3 h-3" /> {vios}
                         </span>
                       )}

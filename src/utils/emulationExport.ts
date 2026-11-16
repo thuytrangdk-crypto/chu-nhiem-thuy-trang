@@ -1,6 +1,14 @@
 import * as XLSX from 'xlsx';
-import { AppState, DisciplineRecord, Student } from '../types';
+import { AppConfig, AppState, DisciplineRecord, SemesterFilter, SemesterId, Student } from '../types';
 import { calculateConduct, calculateStudentPoints, formatDisplayDate } from './helpers';
+import {
+  calculateFullYearEmulation,
+  filterDisciplineBySemester,
+  formatSemesterLabel,
+  getRecordPeriod,
+  getSemesterBasePoints,
+  getSemesterYearConfig,
+} from './semesterHelpers';
 
 export type ReportPeriodType = 'week' | 'month' | 'semester' | 'year' | 'custom';
 
@@ -8,8 +16,10 @@ export interface ReportPeriodConfig {
   type: ReportPeriodType;
   label: string;
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
-  subOption?: string; // e.g., 'this_week' | 'last_week' | 'sem_1' | 'sem_2'
+  endDate: string; // YYYY-MM-DD
+  subOption?: string; // e.g., 'this_week' | 'last_week' | 'sem1' | 'sem2'
+  schoolYear?: string;
+  semesterFilter?: SemesterFilter;
 }
 
 /**
@@ -17,8 +27,7 @@ export interface ReportPeriodConfig {
  */
 export const getVietnamNow = (): { dateStr: string; timeStr: string; fullStr: string } => {
   const now = new Date();
-  
-  // Format Date (YYYY-MM-DD)
+
   const dateParts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'Asia/Ho_Chi_Minh',
     year: 'numeric',
@@ -26,7 +35,6 @@ export const getVietnamNow = (): { dateStr: string; timeStr: string; fullStr: st
     day: '2-digit',
   }).format(now);
 
-  // Format Time (HH:mm:ss)
   const timeParts = new Intl.DateTimeFormat('vi-VN', {
     timeZone: 'Asia/Ho_Chi_Minh',
     hour: '2-digit',
@@ -35,7 +43,6 @@ export const getVietnamNow = (): { dateStr: string; timeStr: string; fullStr: st
     hour12: false,
   }).format(now);
 
-  // Format Display: HH:mm:ss DD/MM/YYYY
   const [y, m, d] = dateParts.split('-');
   const displayDate = `${d}/${m}/${y}`;
   const fullStr = `${timeParts} ngày ${displayDate}`;
@@ -79,15 +86,13 @@ export const normalizeToVNDateStr = (dateVal?: string | Date): string => {
  */
 export const getWeekRange = (refDateStr?: string, offsetWeeks: number = 0): { start: string; end: string } => {
   const base = refDateStr ? new Date(`${refDateStr}T12:00:00+07:00`) : new Date();
-  // Adjust offset
   base.setDate(base.getDate() + offsetWeeks * 7);
 
-  // Get VN date string
   const vnStr = normalizeToVNDateStr(base);
   const [y, m, d] = vnStr.split('-').map(Number);
   const target = new Date(Date.UTC(y, m - 1, d, 12, 0, 0));
 
-  const dayOfWeek = target.getUTCDay(); // 0 is Sunday, 1 is Monday
+  const dayOfWeek = target.getUTCDay();
   const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
 
   const monday = new Date(target);
@@ -125,47 +130,25 @@ export const getMonthRange = (yearMonthStr: string): { start: string; end: strin
 };
 
 /**
- * Calculates semester or school year dates based on schoolYear string (e.g. '2026-2027').
+ * Calculates semester or school year dates based on configurable semesterConfigs per school year.
  */
 export const getAcademicYearRange = (
   schoolYearStr?: string,
-  type: 'sem1' | 'sem2' | 'full' = 'full'
+  type: 'sem1' | 'sem2' | 'full' = 'full',
+  config?: Partial<AppConfig>
 ): { start: string; end: string } => {
-  let startYear = new Date().getFullYear();
-  let endYear = startYear + 1;
-
-  if (schoolYearStr) {
-    const years = schoolYearStr.match(/\d{4}/g);
-    if (years && years.length >= 2) {
-      startYear = Number(years[0]);
-      endYear = Number(years[1]);
-    } else if (years && years.length === 1) {
-      startYear = Number(years[0]);
-      endYear = startYear + 1;
-    }
-  }
-
+  const cal = getSemesterYearConfig(config, schoolYearStr);
   if (type === 'sem1') {
-    return {
-      start: `${startYear}-09-01`,
-      end: `${endYear}-01-15`,
-    };
+    return { start: cal.hk1Start, end: cal.hk1End };
   }
   if (type === 'sem2') {
-    return {
-      start: `${endYear}-01-16`,
-      end: `${endYear}-05-31`,
-    };
+    return { start: cal.hk2Start, end: cal.hk2End };
   }
-  return {
-    start: `${startYear}-09-01`,
-    end: `${endYear}-05-31`,
-  };
+  return { start: cal.hk1Start, end: cal.hk2End };
 };
 
 /**
  * Sanitizes user text to prevent Excel CSV/Formula injection attacks.
- * If text starts with =, +, -, @, \t, or \r, prefix with apostrophe.
  */
 export const sanitizeExcelText = (val: unknown): string => {
   if (val === null || val === undefined) return '';
@@ -192,9 +175,30 @@ export interface StudentEmulationExportItem {
   note: string;
 }
 
+export interface FullYearStudentEmulationExportItem {
+  stt: number;
+  studentId: string;
+  name: string;
+  className: string;
+  basePointsPerSemester: number;
+  hk1Plus: number;
+  hk1Minus: number;
+  hk1Remaining: number;
+  hk1ConductText: string;
+  hk2Plus: number;
+  hk2Minus: number;
+  hk2Remaining: number;
+  hk2ConductText: string;
+  totalPlusCount: number;
+  totalMinusCount: number;
+  note: string;
+}
+
 export interface EmulationDetailExportItem {
   stt: number;
   dateDisplay: string;
+  schoolYear: string;
+  semesterLabel: string;
   studentId: string;
   studentName: string;
   ruleName: string;
@@ -205,14 +209,14 @@ export interface EmulationDetailExportItem {
 }
 
 /**
- * Aggregates all class emulation data for the specified date range.
- * Includes ALL students in the class, regardless of filter or pagination.
+ * Aggregates class emulation data for a single period (Week, Month, Single Semester, or Custom range).
  */
 export const prepareClassEmulationExportData = (
   state: AppState,
   startDate: string,
   endDate: string,
-  locallyDeletedDisciplineIds: string[] = []
+  locallyDeletedDisciplineIds: string[] = [],
+  semesterScope?: { schoolYear: string; semester: SemesterId }
 ): {
   summaryList: StudentEmulationExportItem[];
   detailList: EmulationDetailExportItem[];
@@ -221,48 +225,52 @@ export const prepareClassEmulationExportData = (
   totalPeriodPlus: number;
   totalPeriodMinus: number;
 } => {
-  const basePoints = state.config.initialPoints ?? 100;
+  const basePoints = getSemesterBasePoints(state.config);
   const className = state.config.className || '';
   const teacherName = state.config.teacherName || 'Giáo viên chủ nhiệm';
   const thresholds = state.config.conductThresholds;
 
   const deletedIdsSet = new Set(locallyDeletedDisciplineIds);
-
-  // 1. Filter and deduplicate discipline records within [startDate, endDate]
-  const seenRecordIds = new Set<string>();
-  const periodDisciplineRecords: DisciplineRecord[] = [];
-
-  // Map studentId to student object for quick lookup
   const studentMap = new Map<string, Student>();
   state.students.forEach((s) => {
     studentMap.set(s.id, s);
   });
 
-  (state.discipline || []).forEach((d) => {
-    if (deletedIdsSet.has(d.id)) return;
-    
-    // Only include records for students in the current class
-    if (!studentMap.has(d.studentId)) return;
+  const activeRecords = (state.discipline || []).filter(
+    (d) => !deletedIdsSet.has(d.id) && studentMap.has(d.studentId)
+  );
 
-    // Deduplicate records
-    const recordKey = d.id || `${d.studentId}_${d.date}_${d.ruleId}_${d.points}_${d.type}_${d.note || ''}`;
-    if (seenRecordIds.has(recordKey)) return;
-    seenRecordIds.add(recordKey);
+  let periodDisciplineRecords: DisciplineRecord[] = [];
 
-    // Normalize date to Vietnam timezone
-    const vnDate = normalizeToVNDateStr(d.date);
-    if (!vnDate) return;
+  if (semesterScope) {
+    periodDisciplineRecords = filterDisciplineBySemester(
+      activeRecords,
+      state.config,
+      semesterScope.schoolYear,
+      semesterScope.semester
+    ).map((d) => ({
+      ...d,
+      date: normalizeToVNDateStr(d.date) || d.date,
+    }));
+  } else {
+    const seenRecordIds = new Set<string>();
+    activeRecords.forEach((d) => {
+      const recordKey = d.id || `${d.studentId}_${d.date}_${d.ruleId}_${d.points}_${d.type}_${d.note || ''}`;
+      if (seenRecordIds.has(recordKey)) return;
+      seenRecordIds.add(recordKey);
 
-    // Inclusive date range check
-    if (vnDate >= startDate && vnDate <= endDate) {
-      periodDisciplineRecords.push({
-        ...d,
-        date: vnDate,
-      });
-    }
-  });
+      const vnDate = normalizeToVNDateStr(d.date);
+      if (!vnDate) return;
 
-  // Group discipline records by studentId
+      if (vnDate >= startDate && vnDate <= endDate) {
+        periodDisciplineRecords.push({
+          ...d,
+          date: vnDate,
+        });
+      }
+    });
+  }
+
   const recordsByStudent = new Map<string, DisciplineRecord[]>();
   periodDisciplineRecords.forEach((r) => {
     const list = recordsByStudent.get(r.studentId) || [];
@@ -270,7 +278,6 @@ export const prepareClassEmulationExportData = (
     recordsByStudent.set(r.studentId, list);
   });
 
-  // 2. Compute summary for ALL students in the class
   const studentSummaries = state.students.map((student) => {
     const studentRecords = recordsByStudent.get(student.id) || [];
     const pointsSummary = calculateStudentPoints(studentRecords, basePoints);
@@ -296,7 +303,7 @@ export const prepareClassEmulationExportData = (
       className,
       basePoints,
       totalPlus: pointsSummary.totalPlus,
-      totalMinus: pointsSummary.totalMinus, // Positive number
+      totalMinus: pointsSummary.totalMinus,
       remainingPoints: pointsSummary.remainingPoints,
       conductText: conduct.text,
       plusCount,
@@ -305,7 +312,6 @@ export const prepareClassEmulationExportData = (
     };
   });
 
-  // 3. Sort students by remaining points descending, then by name
   studentSummaries.sort((a, b) => {
     if (b.remainingPoints !== a.remainingPoints) {
       return b.remainingPoints - a.remainingPoints;
@@ -315,7 +321,6 @@ export const prepareClassEmulationExportData = (
     return nameA.localeCompare(nameB, 'vi');
   });
 
-  // 4. Assign ranks (students with equal points share the same rank)
   let currentRank = 1;
   const summaryList: StudentEmulationExportItem[] = studentSummaries.map((item, index) => {
     if (index > 0 && item.remainingPoints < studentSummaries[index - 1].remainingPoints) {
@@ -328,8 +333,6 @@ export const prepareClassEmulationExportData = (
     };
   });
 
-  // 5. Build detail list for Sheet 2
-  // Sort discipline records by date descending, then student name
   const sortedDiscipline = [...periodDisciplineRecords].sort((a, b) => {
     if (b.date !== a.date) {
       return b.date.localeCompare(a.date);
@@ -348,6 +351,7 @@ export const prepareClassEmulationExportData = (
       (r as unknown as Record<string, unknown>).recordedBy ||
       (r as unknown as Record<string, unknown>).teacher ||
       teacherName;
+    const period = getRecordPeriod(r, state.config);
 
     let fullRuleDesc = r.ruleName || '';
     if (r.note && r.note.trim() && r.note.trim() !== r.ruleName.trim()) {
@@ -357,6 +361,8 @@ export const prepareClassEmulationExportData = (
     return {
       stt: index + 1,
       dateDisplay: formatDisplayDate(r.date),
+      schoolYear: period.schoolYear,
+      semesterLabel: formatSemesterLabel(period.semester),
       studentId: r.studentId,
       studentName,
       ruleName: fullRuleDesc,
@@ -377,6 +383,131 @@ export const prepareClassEmulationExportData = (
     totalPeriodRecords: periodDisciplineRecords.length,
     totalPeriodPlus,
     totalPeriodMinus,
+  };
+};
+
+/**
+ * Aggregates full-year class emulation data keeping Học kỳ I and Học kỳ II strictly separate (200 points each, never summed to 400).
+ */
+export const prepareFullYearEmulationExportData = (
+  state: AppState,
+  schoolYear: string,
+  locallyDeletedDisciplineIds: string[] = []
+): {
+  summaryList: FullYearStudentEmulationExportItem[];
+  detailList: EmulationDetailExportItem[];
+  totalClassStudents: number;
+  totalPeriodRecords: number;
+  totalPeriodPlus: number;
+  totalPeriodMinus: number;
+} => {
+  const basePoints = getSemesterBasePoints(state.config);
+  const className = state.config.className || '';
+  const teacherName = state.config.teacherName || 'Giáo viên chủ nhiệm';
+  const deletedIdsSet = new Set(locallyDeletedDisciplineIds);
+
+  const studentMap = new Map<string, Student>();
+  state.students.forEach((s) => studentMap.set(s.id, s));
+
+  const activeRecords = (state.discipline || []).filter(
+    (d) => !deletedIdsSet.has(d.id) && studentMap.has(d.studentId)
+  );
+
+  const yearRecords = filterDisciplineBySemester(
+    activeRecords,
+    state.config,
+    schoolYear,
+    'ALL'
+  ).map((d) => ({
+    ...d,
+    date: normalizeToVNDateStr(d.date) || d.date,
+  }));
+
+  const sortedStudents = [...state.students].sort((a, b) => {
+    const nameA = a.name.trim().split(' ').pop() || '';
+    const nameB = b.name.trim().split(' ').pop() || '';
+    return nameA.localeCompare(nameB, 'vi');
+  });
+
+  const summaryList: FullYearStudentEmulationExportItem[] = sortedStudents.map((student, index) => {
+    const fullYear = calculateFullYearEmulation(activeRecords, state.config, schoolYear, student.id);
+    const totalPlusCount = fullYear.hk1.plusCount + fullYear.hk2.plusCount;
+    const totalMinusCount = fullYear.hk1.minusCount + fullYear.hk2.minusCount;
+
+    let note = '';
+    if (totalPlusCount === 0 && totalMinusCount === 0) {
+      note = 'Chưa có ghi nhận trong năm học (mỗi HK 200đ)';
+    } else {
+      note = `HK I: ${fullYear.hk1.remainingPoints}/${basePoints}đ | HK II: ${fullYear.hk2.remainingPoints}/${basePoints}đ`;
+    }
+
+    return {
+      stt: index + 1,
+      studentId: student.id,
+      name: student.name,
+      className,
+      basePointsPerSemester: basePoints,
+      hk1Plus: fullYear.hk1.totalPlus,
+      hk1Minus: fullYear.hk1.totalMinus,
+      hk1Remaining: fullYear.hk1.remainingPoints,
+      hk1ConductText: fullYear.hk1.conduct.text,
+      hk2Plus: fullYear.hk2.totalPlus,
+      hk2Minus: fullYear.hk2.totalMinus,
+      hk2Remaining: fullYear.hk2.remainingPoints,
+      hk2ConductText: fullYear.hk2.conduct.text,
+      totalPlusCount,
+      totalMinusCount,
+      note,
+    };
+  });
+
+  const sortedDiscipline = [...yearRecords].sort((a, b) => {
+    if (b.date !== a.date) {
+      return b.date.localeCompare(a.date);
+    }
+    const nameA = studentMap.get(a.studentId)?.name || '';
+    const nameB = studentMap.get(b.studentId)?.name || '';
+    return nameA.localeCompare(nameB, 'vi');
+  });
+
+  const detailList: EmulationDetailExportItem[] = sortedDiscipline.map((r, index) => {
+    const student = studentMap.get(r.studentId);
+    const studentName = student?.name || r.studentId;
+    const isPlus = r.type === 'plus';
+    const pointsSigned = isPlus ? `+${r.points}` : `-${r.points}`;
+    const recordedBy =
+      (r as unknown as Record<string, unknown>).recordedBy ||
+      (r as unknown as Record<string, unknown>).teacher ||
+      teacherName;
+    const period = getRecordPeriod(r, state.config);
+
+    let fullRuleDesc = r.ruleName || '';
+    if (r.note && r.note.trim() && r.note.trim() !== r.ruleName.trim()) {
+      fullRuleDesc = `${r.ruleName} (${r.note.trim()})`;
+    }
+
+    return {
+      stt: index + 1,
+      dateDisplay: formatDisplayDate(r.date),
+      schoolYear: period.schoolYear,
+      semesterLabel: formatSemesterLabel(period.semester),
+      studentId: r.studentId,
+      studentName,
+      ruleName: fullRuleDesc,
+      typeLabel: isPlus ? 'Tích cực' : 'Vi phạm',
+      pointsSigned,
+      recordedBy: String(recordedBy),
+      note: r.note || '',
+    };
+  });
+
+  return {
+    summaryList,
+    detailList,
+    totalClassStudents: state.students.length,
+    totalPeriodRecords: yearRecords.length,
+    totalPeriodPlus: yearRecords.filter((r) => r.type === 'plus').length,
+    totalPeriodMinus: yearRecords.filter((r) => r.type === 'minus').length,
   };
 };
 
@@ -402,143 +533,244 @@ export const exportClassEmulationToExcel = (
     const appName = state.config.appName || 'Trường THCS';
     const className = state.config.className || 'Chưa đặt tên lớp';
     const teacherName = state.config.teacherName || 'Chưa cập nhật';
-    const schoolYear = state.config.schoolYear || '2026-2027';
-    const baseScore = state.config.initialPoints ?? 100;
+    const schoolYear = periodConfig.schoolYear || state.config.schoolYear || '2026-2027';
+    const baseScore = getSemesterBasePoints(state.config);
 
-    const { summaryList, detailList, totalPeriodRecords } = prepareClassEmulationExportData(
-      state,
-      startDate,
-      endDate,
-      locallyDeletedDisciplineIds
-    );
+    let wsSummary: XLSX.WorkSheet;
+    let detailList: EmulationDetailExportItem[] = [];
+    let totalPeriodRecords = 0;
 
-    // ==========================================
-    // 1. SHEET 1: "Tổng hợp thi đua"
-    // ==========================================
-    const ws1Rows: unknown[][] = [];
+    if (periodConfig.type === 'year') {
+      const fullYearData = prepareFullYearEmulationExportData(
+        state,
+        schoolYear,
+        locallyDeletedDisciplineIds
+      );
+      detailList = fullYearData.detailList;
+      totalPeriodRecords = fullYearData.totalPeriodRecords;
 
-    // Header metadata
-    ws1Rows.push([{ t: 's', v: 'BÁO CÁO TỔNG HỢP THI ĐUA HỌC SINH' }]); // Row 1
-    ws1Rows.push([
-      { t: 's', v: `Trường / Hệ thống: ${sanitizeExcelText(appName)}` },
-      null,
-      null,
-      { t: 's', v: `Năm học: ${sanitizeExcelText(schoolYear)}` },
-    ]); // Row 2
-    ws1Rows.push([
-      { t: 's', v: `Lớp: ${sanitizeExcelText(className)}` },
-      null,
-      null,
-      { t: 's', v: `Giáo viên chủ nhiệm: ${sanitizeExcelText(teacherName)}` },
-    ]); // Row 3
-    ws1Rows.push([
-      {
-        t: 's',
-        v: `Kỳ báo cáo: ${sanitizeExcelText(periodLabel)} (Từ ngày ${formatDisplayDate(startDate)} đến ngày ${formatDisplayDate(endDate)})`,
-      },
-    ]); // Row 4
-    ws1Rows.push([
-      {
-        t: 's',
-        v: `Thời gian xuất file: ${exportTime} | Điểm ban đầu (điểm nền): ${baseScore} điểm`,
-      },
-    ]); // Row 5
-    ws1Rows.push([]); // Row 6 (Blank)
-
-    // Table Header (Row 7, index 6)
-    const summaryHeaders = [
-      'STT',
-      'Mã hồ sơ học sinh',
-      'Họ và tên',
-      'Lớp',
-      'Điểm ban đầu',
-      'Tổng điểm cộng',
-      'Tổng điểm trừ',
-      'Tổng điểm thi đua',
-      'Xếp loại thi đua',
-      'Xếp hạng',
-      'Số lượt tích cực',
-      'Số lượt vi phạm',
-      'Ghi chú',
-    ];
-    ws1Rows.push(summaryHeaders.map((h) => ({ t: 's', v: h })));
-
-    // Data Rows (Row 8+)
-    summaryList.forEach((item) => {
+      const ws1Rows: unknown[][] = [];
+      ws1Rows.push([{ t: 's', v: 'BÁO CÁO TỔNG HỢP THI ĐUA CẢ NĂM HỌC (ĐỘC LẬP HK I & HK II)' }]);
       ws1Rows.push([
-        { t: 'n', v: item.stt },
-        { t: 's', v: String(item.studentId), z: '@' }, // Must be text to preserve leading 0
-        { t: 's', v: sanitizeExcelText(item.name) },
-        { t: 's', v: sanitizeExcelText(item.className) },
-        { t: 'n', v: item.basePoints },
-        { t: 'n', v: item.totalPlus },
-        { t: 'n', v: item.totalMinus }, // Positive number
-        { t: 'n', v: item.remainingPoints },
-        { t: 's', v: sanitizeExcelText(item.conductText) },
-        { t: 'n', v: item.rank },
-        { t: 'n', v: item.plusCount },
-        { t: 'n', v: item.minusCount },
-        { t: 's', v: sanitizeExcelText(item.note) },
+        { t: 's', v: `Trường / Hệ thống: ${sanitizeExcelText(appName)}` },
+        null,
+        null,
+        { t: 's', v: `Năm học: ${sanitizeExcelText(schoolYear)}` },
       ]);
-    });
+      ws1Rows.push([
+        { t: 's', v: `Lớp: ${sanitizeExcelText(className)}` },
+        null,
+        null,
+        { t: 's', v: `Giáo viên chủ nhiệm: ${sanitizeExcelText(teacherName)}` },
+      ]);
+      ws1Rows.push([
+        {
+          t: 's',
+          v: `Kỳ báo cáo: ${sanitizeExcelText(periodLabel)} (Từ ${formatDisplayDate(startDate)} đến ${formatDisplayDate(endDate)})`,
+        },
+      ]);
+      ws1Rows.push([
+        {
+          t: 's',
+          v: `Thời gian xuất: ${exportTime} | Điểm gốc mỗi học kỳ: ${baseScore} điểm (HK I và HK II tính độc lập, không cộng dồn)`,
+        },
+      ]);
+      ws1Rows.push([]);
 
-    const wsSummary = XLSX.utils.aoa_to_sheet(ws1Rows);
+      const yearHeaders = [
+        'STT',
+        'Mã hồ sơ học sinh',
+        'Họ và tên',
+        'Lớp',
+        `Điểm nền/HK (${baseScore})`,
+        'HK I: Điểm thưởng (+)',
+        'HK I: Điểm trừ (-)',
+        `HK I: Điểm thi đua (/${baseScore})`,
+        'HK I: Hạnh kiểm',
+        'HK II: Điểm thưởng (+)',
+        'HK II: Điểm trừ (-)',
+        `HK II: Điểm thi đua (/${baseScore})`,
+        'HK II: Hạnh kiểm',
+        'Số lượt tích cực (Cả năm)',
+        'Số lượt vi phạm (Cả năm)',
+        'Ghi chú',
+      ];
+      ws1Rows.push(yearHeaders.map((h) => ({ t: 's', v: h })));
 
-    // Set column widths
-    wsSummary['!cols'] = [
-      { wch: 6 },  // STT
-      { wch: 20 }, // Mã hồ sơ học sinh
-      { wch: 28 }, // Họ và tên
-      { wch: 10 }, // Lớp
-      { wch: 14 }, // Điểm ban đầu
-      { wch: 16 }, // Tổng điểm cộng
-      { wch: 16 }, // Tổng điểm trừ
-      { wch: 18 }, // Tổng điểm thi đua
-      { wch: 18 }, // Xếp loại thi đua
-      { wch: 12 }, // Xếp hạng
-      { wch: 18 }, // Số lượt tích cực
-      { wch: 18 }, // Số lượt vi phạm
-      { wch: 35 }, // Ghi chú
-    ];
+      fullYearData.summaryList.forEach((item) => {
+        ws1Rows.push([
+          { t: 'n', v: item.stt },
+          { t: 's', v: String(item.studentId), z: '@' },
+          { t: 's', v: sanitizeExcelText(item.name) },
+          { t: 's', v: sanitizeExcelText(item.className) },
+          { t: 'n', v: item.basePointsPerSemester },
+          { t: 'n', v: item.hk1Plus },
+          { t: 'n', v: item.hk1Minus },
+          { t: 'n', v: item.hk1Remaining },
+          { t: 's', v: sanitizeExcelText(item.hk1ConductText) },
+          { t: 'n', v: item.hk2Plus },
+          { t: 'n', v: item.hk2Minus },
+          { t: 'n', v: item.hk2Remaining },
+          { t: 's', v: sanitizeExcelText(item.hk2ConductText) },
+          { t: 'n', v: item.totalPlusCount },
+          { t: 'n', v: item.totalMinusCount },
+          { t: 's', v: sanitizeExcelText(item.note) },
+        ]);
+      });
 
-    // AutoFilter on row 7 (index 6, A7:M{lastRow})
-    const summaryLastRow = ws1Rows.length;
-    wsSummary['!autofilter'] = { ref: `A7:M${summaryLastRow}` };
+      wsSummary = XLSX.utils.aoa_to_sheet(ws1Rows);
+      wsSummary['!cols'] = [
+        { wch: 6 },  // STT
+        { wch: 18 }, // Mã HS
+        { wch: 26 }, // Họ tên
+        { wch: 10 }, // Lớp
+        { wch: 16 }, // Điểm nền
+        { wch: 18 }, // HK I thưởng
+        { wch: 16 }, // HK I trừ
+        { wch: 20 }, // HK I còn lại
+        { wch: 16 }, // HK I hạnh kiểm
+        { wch: 18 }, // HK II thưởng
+        { wch: 16 }, // HK II trừ
+        { wch: 20 }, // HK II còn lại
+        { wch: 16 }, // HK II hạnh kiểm
+        { wch: 20 }, // Số lượt tích cực
+        { wch: 20 }, // Số lượt vi phạm
+        { wch: 34 }, // Ghi chú
+      ];
+      wsSummary['!autofilter'] = { ref: `A7:P${ws1Rows.length}` };
+      wsSummary['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 7 }];
+    } else {
+      const semesterScope =
+        periodConfig.type === 'semester'
+          ? {
+              schoolYear,
+              semester: (periodConfig.subOption === 'sem2' ? 'HK2' : 'HK1') as SemesterId,
+            }
+          : undefined;
 
-    // Freeze panes: Freeze above data rows (freeze top 7 rows)
-    wsSummary['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 7 }];
+      const singleData = prepareClassEmulationExportData(
+        state,
+        startDate,
+        endDate,
+        locallyDeletedDisciplineIds,
+        semesterScope
+      );
+      detailList = singleData.detailList;
+      totalPeriodRecords = singleData.totalPeriodRecords;
+
+      const ws1Rows: unknown[][] = [];
+      ws1Rows.push([{ t: 's', v: 'BÁO CÁO TỔNG HỢP THI ĐUA HỌC SINH' }]);
+      ws1Rows.push([
+        { t: 's', v: `Trường / Hệ thống: ${sanitizeExcelText(appName)}` },
+        null,
+        null,
+        { t: 's', v: `Năm học: ${sanitizeExcelText(schoolYear)}` },
+      ]);
+      ws1Rows.push([
+        { t: 's', v: `Lớp: ${sanitizeExcelText(className)}` },
+        null,
+        null,
+        { t: 's', v: `Giáo viên chủ nhiệm: ${sanitizeExcelText(teacherName)}` },
+      ]);
+      ws1Rows.push([
+        {
+          t: 's',
+          v: `Kỳ báo cáo: ${sanitizeExcelText(periodLabel)} (Từ ngày ${formatDisplayDate(startDate)} đến ngày ${formatDisplayDate(endDate)})`,
+        },
+      ]);
+      ws1Rows.push([
+        {
+          t: 's',
+          v: `Thời gian xuất file: ${exportTime} | Điểm gốc mỗi học kỳ: ${baseScore} điểm`,
+        },
+      ]);
+      ws1Rows.push([]);
+
+      const summaryHeaders = [
+        'STT',
+        'Mã hồ sơ học sinh',
+        'Họ và tên',
+        'Lớp',
+        `Điểm gốc (${baseScore})`,
+        'Tổng điểm cộng (+)',
+        'Tổng điểm trừ (-)',
+        `Điểm thi đua (/${baseScore})`,
+        'Xếp loại hạnh kiểm',
+        'Xếp hạng',
+        'Số lượt tích cực',
+        'Số lượt vi phạm',
+        'Ghi chú',
+      ];
+      ws1Rows.push(summaryHeaders.map((h) => ({ t: 's', v: h })));
+
+      singleData.summaryList.forEach((item) => {
+        ws1Rows.push([
+          { t: 'n', v: item.stt },
+          { t: 's', v: String(item.studentId), z: '@' },
+          { t: 's', v: sanitizeExcelText(item.name) },
+          { t: 's', v: sanitizeExcelText(item.className) },
+          { t: 'n', v: item.basePoints },
+          { t: 'n', v: item.totalPlus },
+          { t: 'n', v: item.totalMinus },
+          { t: 'n', v: item.remainingPoints },
+          { t: 's', v: sanitizeExcelText(item.conductText) },
+          { t: 'n', v: item.rank },
+          { t: 'n', v: item.plusCount },
+          { t: 'n', v: item.minusCount },
+          { t: 's', v: sanitizeExcelText(item.note) },
+        ]);
+      });
+
+      wsSummary = XLSX.utils.aoa_to_sheet(ws1Rows);
+      wsSummary['!cols'] = [
+        { wch: 6 },
+        { wch: 20 },
+        { wch: 28 },
+        { wch: 10 },
+        { wch: 15 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 35 },
+      ];
+      wsSummary['!autofilter'] = { ref: `A7:M${ws1Rows.length}` };
+      wsSummary['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 7 }];
+    }
 
     // ==========================================
     // 2. SHEET 2: "Chi tiết ghi nhận"
     // ==========================================
     const ws2Rows: unknown[][] = [];
-
-    // Header metadata
-    ws2Rows.push([{ t: 's', v: `BẢNG CHI TIẾT GHI NHẬN THI ĐUA - LỚP ${sanitizeExcelText(className)}` }]); // Row 1
+    ws2Rows.push([{ t: 's', v: `BẢNG CHI TIẾT GHI NHẬN THI ĐUA - LỚP ${sanitizeExcelText(className)}` }]);
     ws2Rows.push([
       { t: 's', v: `Trường / Hệ thống: ${sanitizeExcelText(appName)}` },
       null,
       null,
       { t: 's', v: `Năm học: ${sanitizeExcelText(schoolYear)} | GVCN: ${sanitizeExcelText(teacherName)}` },
-    ]); // Row 2
+    ]);
     ws2Rows.push([
       {
         t: 's',
         v: `Kỳ báo cáo: ${sanitizeExcelText(periodLabel)} (Từ ${formatDisplayDate(startDate)} đến ${formatDisplayDate(endDate)})`,
       },
-    ]); // Row 3
+    ]);
     ws2Rows.push([
       {
         t: 's',
         v: `Tổng số lượt ghi nhận trong kỳ: ${totalPeriodRecords} lượt | Thời gian xuất file: ${exportTime}`,
       },
-    ]); // Row 4
-    ws2Rows.push([]); // Row 5 (Blank)
+    ]);
+    ws2Rows.push([]);
 
-    // Table Header (Row 6, index 5)
     const detailHeaders = [
       'STT',
       'Thời gian',
+      'Năm học',
+      'Học kỳ',
       'Mã hồ sơ học sinh',
       'Họ và tên',
       'Nội dung sự việc',
@@ -553,6 +785,8 @@ export const exportClassEmulationToExcel = (
       ws2Rows.push([
         { t: 's', v: '-' },
         { t: 's', v: '-' },
+        { t: 's', v: schoolYear },
+        { t: 's', v: '-' },
         { t: 's', v: '-' },
         { t: 's', v: '-' },
         { t: 's', v: 'Không có ghi nhận vi phạm hay khen thưởng nào trong kỳ này' },
@@ -566,11 +800,13 @@ export const exportClassEmulationToExcel = (
         ws2Rows.push([
           { t: 'n', v: item.stt },
           { t: 's', v: item.dateDisplay },
-          { t: 's', v: String(item.studentId), z: '@' }, // Text cell to keep leading 0
+          { t: 's', v: sanitizeExcelText(item.schoolYear) },
+          { t: 's', v: sanitizeExcelText(item.semesterLabel) },
+          { t: 's', v: String(item.studentId), z: '@' },
           { t: 's', v: sanitizeExcelText(item.studentName) },
           { t: 's', v: sanitizeExcelText(item.ruleName) },
           { t: 's', v: sanitizeExcelText(item.typeLabel) },
-          { t: 's', v: item.pointsSigned }, // Explicit + or -
+          { t: 's', v: item.pointsSigned },
           { t: 's', v: sanitizeExcelText(item.recordedBy) },
           { t: 's', v: sanitizeExcelText(item.note) },
         ]);
@@ -578,35 +814,26 @@ export const exportClassEmulationToExcel = (
     }
 
     const wsDetails = XLSX.utils.aoa_to_sheet(ws2Rows);
-
-    // Set column widths
     wsDetails['!cols'] = [
       { wch: 6 },  // STT
       { wch: 14 }, // Thời gian
-      { wch: 20 }, // Mã hồ sơ học sinh
-      { wch: 28 }, // Họ và tên
+      { wch: 13 }, // Năm học
+      { wch: 12 }, // Học kỳ
+      { wch: 20 }, // Mã HS
+      { wch: 28 }, // Họ tên
       { wch: 38 }, // Nội dung sự việc
       { wch: 16 }, // Loại ghi nhận
       { wch: 16 }, // Điểm cộng/trừ
       { wch: 24 }, // Người ghi nhận
       { wch: 35 }, // Ghi chú
     ];
-
-    // AutoFilter on row 6 (index 5, A6:I{lastRow})
-    const detailsLastRow = ws2Rows.length;
-    wsDetails['!autofilter'] = { ref: `A6:I${detailsLastRow}` };
-
-    // Freeze panes: Freeze above data rows (freeze top 6 rows)
+    wsDetails['!autofilter'] = { ref: `A6:K${ws2Rows.length}` };
     wsDetails['!views'] = [{ state: 'frozen', xSplit: 0, ySplit: 6 }];
 
-    // ==========================================
-    // 3. Assemble Workbook
-    // ==========================================
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, wsSummary, 'Tổng hợp thi đua');
     XLSX.utils.book_append_sheet(workbook, wsDetails, 'Chi tiết ghi nhận');
 
-    // Filename format: Thi_dua_[TenLop]_[TuNgay]_[DenNgay].xlsx
     const cleanClassName = className.replace(/[^a-zA-Z0-9_\u00C0-\u024F\u1EA0-\u1EF9]/g, '_');
     const fileName = `Thi_dua_${cleanClassName}_${startDate}_${endDate}.xlsx`;
 

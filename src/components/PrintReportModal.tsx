@@ -1,7 +1,12 @@
 import React, { useRef } from 'react';
 import { X, Printer, GraduationCap, Award, Calendar, Phone, MapPin } from 'lucide-react';
 import { AppState, Student } from '../types';
-import { calculateConduct, calculateStudentPoints, formatDisplayDate } from '../utils/helpers';
+import { formatDisplayDate } from '../utils/helpers';
+import {
+  calculateFullYearEmulation,
+  detectActiveSemester,
+  getSemesterBasePoints,
+} from '../utils/semesterHelpers';
 
 interface PrintReportModalProps {
   isOpen: boolean;
@@ -26,12 +31,21 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
   const unexcused = studentAtt.filter((a) => a.status === 'kp').length;
   const late = studentAtt.filter((a) => a.status === 'm').length;
 
-  // Calculate discipline & conduct
-  const studentDisc = state.discipline.filter((d) => d.studentId === student.id);
-  const baseScore = state.config.initialPoints ?? 100;
-  const discSummary = calculateStudentPoints(studentDisc, baseScore);
-  const remainingPoints = discSummary.remainingPoints;
-  const conduct = calculateConduct(remainingPoints, state.config.conductThresholds);
+  // Calculate discipline & conduct independently per semester (200 points/semester)
+  const activeSem = detectActiveSemester(state.config);
+  const baseScore = getSemesterBasePoints(state.config);
+  const fullYear = calculateFullYearEmulation(
+    state.discipline,
+    state.config,
+    activeSem.schoolYear,
+    student.id
+  );
+  const activeSummary = activeSem.semester === 'HK2' ? fullYear.hk2 : fullYear.hk1;
+  const remainingPoints = activeSummary.remainingPoints;
+  const conduct = activeSummary.conduct;
+  const activeSemLabel = activeSem.semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II';
+  const otherSummary = activeSem.semester === 'HK2' ? fullYear.hk1 : fullYear.hk2;
+  const otherSemLabel = activeSem.semester === 'HK2' ? 'HK I' : 'HK II';
 
   // Grades summary
   const grades = student.grades || {};
@@ -145,28 +159,32 @@ export const PrintReportModal: React.FC<PrintReportModalProps> = ({
 
               <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/50">
                 <h5 className="font-bold text-xs uppercase text-gray-700 mb-2 flex items-center gap-1.5">
-                  <Award className="w-3.5 h-3.5 text-indigo-600" /> Rèn luyện &amp; Hạnh kiểm
+                  <Award className="w-3.5 h-3.5 text-[#922235]" /> Rèn luyện &amp; Hạnh kiểm ({activeSemLabel})
                 </h5>
                 <div className="text-xs space-y-1">
                   <p>
-                    Điểm thi đua còn lại:{' '}
-                    <strong
-                      className={
-                        remainingPoints >= 80
-                          ? 'text-emerald-600'
-                          : remainingPoints >= 65
-                          ? 'text-amber-600'
-                          : 'text-red-600'
-                      }
-                    >
+                    Điểm thi đua ({activeSemLabel}):{' '}
+                    <strong className={conduct.color}>
                       {remainingPoints} / {baseScore} điểm
                     </strong>
                   </p>
                   <p className="text-[11px] text-gray-500">
-                    (Điểm ban đầu: {baseScore}đ, Thưởng: +{discSummary.totalPlus}đ, Trừ: -{discSummary.totalMinus}đ)
+                    (Điểm gốc: {baseScore}đ, Thưởng: +{activeSummary.totalPlus}đ, Trừ: -{activeSummary.totalMinus}đ)
                   </p>
-                  <p>Xếp loại hạnh kiểm: <strong className="text-indigo-700 uppercase font-extrabold text-sm">{conduct.text}</strong></p>
-                  <p>Điểm trung bình học tập: <strong className="text-indigo-700">{gpaStr}</strong></p>
+                  {otherSummary.records.length > 0 && (
+                    <p className="text-[11px] text-gray-600">
+                      {otherSemLabel}: <strong>{otherSummary.remainingPoints}/{baseScore}đ</strong> ({otherSummary.conduct.text})
+                    </p>
+                  )}
+                  <p>
+                    Xếp loại hạnh kiểm:{' '}
+                    <strong className="text-[#922235] uppercase font-extrabold text-sm">
+                      {conduct.text}
+                    </strong>
+                  </p>
+                  <p>
+                    Điểm trung bình học tập: <strong className="text-[#233146]">{gpaStr}</strong>
+                  </p>
                 </div>
               </div>
             </div>

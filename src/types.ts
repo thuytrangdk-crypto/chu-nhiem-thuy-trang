@@ -4,6 +4,16 @@ export type DisciplineType = 'minus' | 'plus';
 export type NoticeType = 'info' | 'warning' | 'success';
 export type NoteType = 'Liên hệ PH' | 'Học tập' | 'Khác';
 export type UserRole = 'teacher' | 'student';
+export type SemesterId = 'HK1' | 'HK2';
+export type SemesterFilter = 'HK1' | 'HK2' | 'ALL';
+
+export interface SemesterYearConfig {
+  schoolYear: string; // e.g. '2026-2027'
+  hk1Start: string;   // YYYY-MM-DD
+  hk1End: string;     // YYYY-MM-DD
+  hk2Start: string;   // YYYY-MM-DD
+  hk2End: string;     // YYYY-MM-DD
+}
 
 export interface Rule {
   id: string;
@@ -29,7 +39,9 @@ export interface AppConfig {
   subjects: string[];
   rules: Rule[];
   conductThresholds: ConductThresholds;
-  initialPoints?: number; // Base emulation score (default: 100)
+  initialPoints?: number; // Legacy field (default migrated to 200 per semester)
+  semesterBasePoints?: number; // Base emulation score per semester (default: 200)
+  semesterConfigs?: Record<string, SemesterYearConfig>; // Configurable semester dates per school year
   availableClasses?: string[];
   evaluationSubjects?: string[]; // Môn đánh giá bằng nhận xét, không tính vào ĐTB
 }
@@ -66,6 +78,9 @@ export interface DisciplineRecord {
   points: number;
   type: DisciplineType;
   note?: string;
+  schoolYear?: string; // e.g. '2026-2027'
+  semester?: SemesterId; // 'HK1' | 'HK2'
+  updatedAt?: string;
 }
 
 export interface NoteRecord {

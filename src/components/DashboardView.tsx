@@ -10,7 +10,8 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { AppState, Student } from '../types';
-import { calculateConduct, formatDisplayDate, getTodayStr } from '../utils/helpers';
+import { formatDisplayDate, getTodayStr } from '../utils/helpers';
+import { detectActiveSemester, filterDisciplineBySemester } from '../utils/semesterHelpers';
 
 interface DashboardViewProps {
   state: AppState;
@@ -50,14 +51,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const violationsWeek = recentDiscipline.filter((d) => d.type === 'minus').length;
   const rewardsWeek = recentDiscipline.filter((d) => d.type === 'plus').length;
 
-  // Attention students criteria
+  const activeSem = detectActiveSemester(state.config);
+  const activeSemDiscipline = filterDisciplineBySemester(
+    state.discipline,
+    state.config,
+    activeSem.schoolYear,
+    activeSem.semester
+  );
+  const activeSemLabel = activeSem.semester === 'HK1' ? 'HK I' : 'HK II';
+
+  // Attention students criteria (violations scoped to active semester)
   const getStudentAttentionFlags = (s: Student) => {
     const absences = state.attendance.filter(
       (a) =>
         a.studentId === s.id &&
         (a.status === 'v' || a.status === 'kp' || a.status === 'm')
     ).length;
-    const minusViolations = state.discipline.filter(
+    const minusViolations = activeSemDiscipline.filter(
       (d) => d.studentId === s.id && d.type === 'minus'
     ).length;
     const parentContactNotes = state.notes.filter(
@@ -368,9 +378,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
                   <div className="grid grid-cols-2 gap-2.5 text-center">
                     <div className="p-2.5 bg-emerald-50/80 rounded-xl border border-emerald-100">
-                      <span className="text-[10px] text-emerald-700 font-medium block">Khen thưởng</span>
+                      <span className="text-[10px] text-emerald-700 font-medium block">
+                        Khen thưởng ({activeSemLabel})
+                      </span>
                       <strong className="text-base text-emerald-800 font-black">
-                        {state.discipline.filter((d) => d.studentId === currentStudent.id && d.type === 'plus').length}
+                        {
+                          activeSemDiscipline.filter(
+                            (d) => d.studentId === currentStudent.id && d.type === 'plus'
+                          ).length
+                        }
                       </strong>
                     </div>
                     <div className="p-2.5 bg-amber-50/80 rounded-xl border border-amber-100">

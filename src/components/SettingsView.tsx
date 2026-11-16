@@ -17,10 +17,27 @@ import {
   CheckCircle2,
   ExternalLink,
   RotateCcw,
+  Calendar,
 } from 'lucide-react';
-import { AppConfig, AppState, ConductThresholds, DisciplineType, Rule } from '../types';
+import {
+  AppConfig,
+  AppState,
+  ConductThresholds,
+  DisciplineType,
+  Rule,
+  SemesterYearConfig,
+} from '../types';
 import { ConfirmModal } from './ConfirmModal';
-import { generateId } from '../utils/helpers';
+import { formatDisplayDate, generateId } from '../utils/helpers';
+import {
+  DEFAULT_SEMESTER_BASE_POINTS,
+  detectActiveSemester,
+  getAvailableSchoolYears,
+  getDefaultSemesterYearConfig,
+  getSemesterBasePoints,
+  getSemesterYearConfig,
+  validateSemesterYearConfig,
+} from '../utils/semesterHelpers';
 import { SyncStatus } from '../services/supabaseService';
 import { DEFAULT_INITIAL_STATE } from '../defaultData';
 
@@ -56,7 +73,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   // Conduct & Points thresholds state
   const isInitialLegacy = (state.config.conductThresholds?.good ?? 0) <= 0;
-  const [initialPoints, setInitialPoints] = useState(state.config.initialPoints ?? 100);
+  const [initialPoints, setInitialPoints] = useState(() => getSemesterBasePoints(state.config));
   const [goodScore, setGoodScore] = useState(
     isInitialLegacy ? 90 : (state.config.conductThresholds?.good ?? 90)
   );
@@ -66,6 +83,17 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [avgScore, setAvgScore] = useState(
     isInitialLegacy ? 65 : (state.config.conductThresholds?.average ?? 65)
   );
+
+  // Configurable semester calendar per school year
+  const availableYears = getAvailableSchoolYears(state.config, state.discipline);
+  const [editingCalendarYear, setEditingCalendarYear] = useState<string>(
+    state.config.schoolYear || '2026-2027'
+  );
+  const [newCalendarYearInput, setNewCalendarYearInput] = useState('');
+  const [calendarForm, setCalendarForm] = useState<SemesterYearConfig>(() =>
+    getSemesterYearConfig(state.config, state.config.schoolYear || '2026-2027')
+  );
+  const [calendarError, setCalendarError] = useState<string | null>(null);
 
   // Rule modal state
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false);
@@ -92,12 +120,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     setSchoolYear(state.config.schoolYear);
     setTeacherName(state.config.teacherName);
     setTeacherPassword(state.config.teacherPassword);
-    setInitialPoints(state.config.initialPoints ?? 100);
+    setInitialPoints(getSemesterBasePoints(state.config));
     const legacy = (state.config.conductThresholds?.good ?? 0) <= 0;
     setGoodScore(legacy ? 90 : (state.config.conductThresholds?.good ?? 90));
     setFairScore(legacy ? 80 : (state.config.conductThresholds?.fair ?? 80));
     setAvgScore(legacy ? 65 : (state.config.conductThresholds?.average ?? 65));
-  }, [state.config]);
+    setCalendarForm(getSemesterYearConfig(state.config, editingCalendarYear));
+  }, [state.config, editingCalendarYear]);
 
   const handleSaveGeneral = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,12 +146,65 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       fair: Number(fairScore) || 80,
       average: Number(avgScore) || 65,
     };
+    const basePts = Math.max(10, Number(initialPoints) || DEFAULT_SEMESTER_BASE_POINTS);
     onUpdateConfig({
       conductThresholds: thresholds,
-      initialPoints: Math.max(10, Number(initialPoints) || 100),
+      semesterBasePoints: basePts,
+      initialPoints: basePts,
     });
-    onShowToast('Đã cập nhật thang điểm và tiêu chí Hạnh kiểm');
+    onShowToast('Đã cập nhật thang điểm mỗi học kỳ và tiêu chí Hạnh kiểm');
   };
+
+  const handleSelectCalendarYear = (yr: string) => {
+    setEditingCalendarYear(yr);
+    setCalendarForm(getSemesterYearConfig(state.config, yr));
+    setCalendarError(null);
+  };
+
+  const handleAddCalendarYear = () => {
+    const clean = newCalendarYearInput.trim();
+    if (!/^\d{4}-\d{4}$/.test(clean)) {
+      setCalendarError('Năm học mới cần theo định dạng YYYY-YYYY (ví dụ: 2027-2028).');
+      return;
+    }
+    const defaultCal = getDefaultSemesterYearConfig(clean);
+    const updatedMap = {
+      ...(state.config.semesterConfigs || {}),
+      [clean]: state.config.semesterConfigs?.[clean] || defaultCal,
+    };
+    onUpdateConfig({ semesterConfigs: updatedMap });
+    setEditingCalendarYear(clean);
+    setCalendarForm(updatedMap[clean]);
+    setNewCalendarYearInput('');
+    setCalendarError(null);
+    onShowToast(`Đã thêm cấu hình thời gian cho năm học ${clean}`);
+  };
+
+  const handleSaveSemesterCalendar = () => {
+    const payload: SemesterYearConfig = {
+      schoolYear: editingCalendarYear,
+      hk1Start: calendarForm.hk1Start,
+      hk1End: calendarForm.hk1End,
+      hk2Start: calendarForm.hk2Start,
+      hk2End: calendarForm.hk2End,
+    };
+    const validation = validateSemesterYearConfig(payload);
+    if (!validation.valid) {
+      setCalendarError(validation.error || 'Khoảng ngày học kỳ không hợp lệ.');
+      onShowToast(validation.error || 'Khoảng ngày học kỳ không hợp lệ.', 'error');
+      return;
+    }
+    setCalendarError(null);
+    onUpdateConfig({
+      semesterConfigs: {
+        ...(state.config.semesterConfigs || {}),
+        [editingCalendarYear]: payload,
+      },
+    });
+    onShowToast(`Đã lưu thời gian Học kỳ I & II cho năm học ${editingCalendarYear}`);
+  };
+
+  const activeSemesterInfo = detectActiveSemester(state.config);
 
   const handleOpenAddRule = () => {
     setRuleToEdit(null);
@@ -371,10 +453,44 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
+              {/* Quick semester status banner in General tab */}
+              {(() => {
+                const activeCal = getSemesterYearConfig(state.config, state.config.schoolYear);
+                return (
+                  <div className="bg-[#FFF8F4] border border-[#E8DEDA] rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="text-xs space-y-1">
+                      <div className="font-bold text-[#233146] flex items-center gap-1.5">
+                        <Calendar className="w-4 h-4 text-[#922235]" />
+                        <span>
+                          Thời gian Học kỳ năm học {activeCal.schoolYear} (Hiện tại:{' '}
+                          <strong className="text-[#922235]">
+                            {activeSemesterInfo.semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II'}
+                          </strong>
+                          )
+                        </span>
+                      </div>
+                      <p className="text-[#697589]">
+                        HK I: <strong>{formatDisplayDate(activeCal.hk1Start)}</strong> –{' '}
+                        <strong>{formatDisplayDate(activeCal.hk1End)}</strong> • HK II:{' '}
+                        <strong>{formatDisplayDate(activeCal.hk2Start)}</strong> –{' '}
+                        <strong>{formatDisplayDate(activeCal.hk2End)}</strong>
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab('rules')}
+                      className="px-3.5 py-2 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] font-bold rounded-xl text-xs border border-[#E8DEDA] transition-colors cursor-pointer shrink-0"
+                    >
+                      Cấu hình ngày Học kỳ
+                    </button>
+                  </div>
+                );
+              })()}
+
               <div className="pt-4 border-t border-gray-100 flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs sm:text-sm shadow-md transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Save className="w-4 h-4" />
                   <span>Lưu thông tin</span>
@@ -469,25 +585,164 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
               </div>
 
+              {/* Semester Calendar Configuration per School Year */}
+              <div className="bg-[#FFF8F4] p-5 rounded-2xl border border-[#E8DEDA] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-[#233146] text-sm flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#922235]" />
+                      <span>Cấu hình Thời gian Học kỳ I &amp; Học kỳ II theo Năm học</span>
+                    </h4>
+                    <p className="text-xs text-[#697589] mt-0.5">
+                      Hệ thống tự động xác định học kỳ và khởi tạo lại 200 điểm khi bắt đầu Học kỳ II dựa trên mốc ngày cấu hình (không dùng ngày cố định).
+                    </p>
+                  </div>
+                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA] shrink-0 self-start sm:self-auto">
+                    Đang áp dụng: {activeSemesterInfo.semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II'} ({activeSemesterInfo.schoolYear})
+                  </span>
+                </div>
+
+                {/* Year selector & Add new school year */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-xs font-bold text-[#233146]">Chọn năm học cấu hình:</label>
+                  <select
+                    value={editingCalendarYear}
+                    onChange={(e) => handleSelectCalendarYear(e.target.value)}
+                    className="px-3 py-1.5 bg-white border border-[#E8DEDA] rounded-xl text-xs font-bold text-[#233146] outline-none cursor-pointer focus:ring-2 focus:ring-[#922235]"
+                  >
+                    {availableYears.map((yr) => (
+                      <option key={yr} value={yr}>
+                        Năm học {yr} {yr === state.config.schoolYear ? '(Hiện tại)' : ''}
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="flex items-center gap-1.5 ml-auto">
+                    <input
+                      type="text"
+                      value={newCalendarYearInput}
+                      onChange={(e) => setNewCalendarYearInput(e.target.value)}
+                      placeholder="VD: 2027-2028"
+                      className="w-28 px-2.5 py-1.5 bg-white border border-[#E8DEDA] rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-[#922235]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCalendarYear}
+                      className="px-3 py-1.5 bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] font-bold rounded-xl text-xs border border-[#E8DEDA] cursor-pointer transition-colors"
+                    >
+                      + Thêm năm học
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-white p-3.5 rounded-xl border border-[#E8DEDA] space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#922235] uppercase">Học kỳ I</span>
+                      <span className="text-[10px] font-bold text-[#697589] bg-[#F5EDEB] px-2 py-0.5 rounded-md">
+                        Điểm gốc: {initialPoints}đ
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#697589] mb-1">Ngày bắt đầu</label>
+                        <input
+                          type="date"
+                          value={calendarForm.hk1Start}
+                          onChange={(e) =>
+                            setCalendarForm((prev) => ({ ...prev, hk1Start: e.target.value }))
+                          }
+                          className="w-full px-2.5 py-1.5 border border-[#E8DEDA] rounded-lg text-xs font-semibold text-[#233146] outline-none focus:ring-2 focus:ring-[#922235]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#697589] mb-1">Ngày kết thúc</label>
+                        <input
+                          type="date"
+                          value={calendarForm.hk1End}
+                          onChange={(e) =>
+                            setCalendarForm((prev) => ({ ...prev, hk1End: e.target.value }))
+                          }
+                          className="w-full px-2.5 py-1.5 border border-[#E8DEDA] rounded-lg text-xs font-semibold text-[#233146] outline-none focus:ring-2 focus:ring-[#922235]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-3.5 rounded-xl border border-[#E8DEDA] space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-black text-[#233146] uppercase">Học kỳ II</span>
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                        Tự tạo mới {initialPoints}đ
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#697589] mb-1">Ngày bắt đầu</label>
+                        <input
+                          type="date"
+                          value={calendarForm.hk2Start}
+                          onChange={(e) =>
+                            setCalendarForm((prev) => ({ ...prev, hk2Start: e.target.value }))
+                          }
+                          className="w-full px-2.5 py-1.5 border border-[#E8DEDA] rounded-lg text-xs font-semibold text-[#233146] outline-none focus:ring-2 focus:ring-[#922235]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-[#697589] mb-1">Ngày kết thúc</label>
+                        <input
+                          type="date"
+                          value={calendarForm.hk2End}
+                          onChange={(e) =>
+                            setCalendarForm((prev) => ({ ...prev, hk2End: e.target.value }))
+                          }
+                          className="w-full px-2.5 py-1.5 border border-[#E8DEDA] rounded-lg text-xs font-semibold text-[#233146] outline-none focus:ring-2 focus:ring-[#922235]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {calendarError && (
+                  <p className="text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-2 rounded-xl">
+                    {calendarError}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-[11px] text-[#697589] italic">
+                    * Dữ liệu thi đua Học kỳ I được bảo toàn nguyên vẹn khi chuyển sang Học kỳ II.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSaveSemesterCalendar}
+                    className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Lưu thời gian Học kỳ</span>
+                  </button>
+                </div>
+              </div>
+
               {/* Conduct Thresholds */}
-              <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100 space-y-4">
+              <div className="bg-[#F5EDEB]/60 p-5 rounded-2xl border border-[#E8DEDA] space-y-4">
                 <div>
-                  <h4 className="font-bold text-gray-900 text-sm">
-                    Thang điểm thi đua &amp; Tiêu chí Xếp loại Hạnh kiểm
+                  <h4 className="font-bold text-[#233146] text-sm">
+                    Thang điểm thi đua theo Học kỳ &amp; Tiêu chí Xếp loại Hạnh kiểm
                   </h4>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    Mỗi học sinh bắt đầu với điểm chuẩn ban đầu. Điểm thi đua còn lại = Điểm ban đầu + Điểm thưởng - Điểm vi phạm.
+                  <p className="text-xs text-[#697589] mt-0.5">
+                    Mỗi học sinh bắt đầu với 200 điểm cho mỗi học kỳ (tính độc lập giữa HK I và HK II, không cộng dồn). Điểm thi đua học kỳ = Điểm chuẩn + Điểm thưởng - Điểm trừ.
                   </p>
                 </div>
 
                 {/* Điểm chuẩn ban đầu */}
-                <div className="bg-white p-3.5 rounded-xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="bg-white p-3.5 rounded-xl border border-[#E8DEDA] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                   <div>
-                    <label className="text-xs font-bold text-gray-800 block">
-                      Điểm thi đua chuẩn ban đầu (Xuất phát)
+                    <label className="text-xs font-bold text-[#233146] block">
+                      Điểm thi đua chuẩn ban đầu mỗi học kỳ
                     </label>
-                    <p className="text-[11px] text-gray-500 mt-0.5">
-                      Điểm gốc của mỗi học sinh trong mỗi kỳ/tháng đánh giá (mặc định: 100 điểm)
+                    <p className="text-[11px] text-[#697589] mt-0.5">
+                      Áp dụng độc lập cho từng học kỳ HK I và HK II (mặc định chuẩn: 200 điểm/học kỳ)
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -497,9 +752,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                       max="1000"
                       value={initialPoints}
                       onChange={(e) => setInitialPoints(Number(e.target.value))}
-                      className="w-24 px-3 py-1.5 text-center font-black text-sm text-blue-700 border border-blue-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50/30"
+                      className="w-24 px-3 py-1.5 text-center font-black text-sm text-[#922235] border border-[#E8DEDA] rounded-lg outline-none focus:ring-2 focus:ring-[#922235] bg-[#FFF8F4]"
                     />
-                    <span className="text-xs font-bold text-gray-600">điểm</span>
+                    <span className="text-xs font-bold text-[#697589]">điểm/HK</span>
                   </div>
                 </div>
 
@@ -554,12 +809,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between pt-2">
-                  <p className="text-[11px] text-gray-500 italic">
-                    * Điểm dưới ngưỡng Trung Bình sẽ tự động xếp loại Yếu.
+                  <p className="text-[11px] text-[#697589] italic">
+                    * Điểm dưới ngưỡng Trung Bình sẽ tự động xếp loại Yếu (tính riêng từng học kỳ).
                   </p>
                   <button
+                    type="button"
                     onClick={handleSaveConductThresholds}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs"
+                    className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-bold rounded-xl text-xs transition-colors cursor-pointer shadow-xs"
                   >
                     Lưu tiêu chí Hạnh kiểm
                   </button>

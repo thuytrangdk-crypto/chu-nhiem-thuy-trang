@@ -223,7 +223,17 @@ export const DEFAULT_INITIAL_STATE: AppState = {
       { id: 'r10', name: 'Nhặt được của rơi trả người đánh mất', points: 5, type: 'plus' },
       { id: 'r11', name: 'Tham gia tích cực phong trào lớp', points: 2, type: 'plus' },
     ],
-    initialPoints: 100,
+    initialPoints: 200,
+    semesterBasePoints: 200,
+    semesterConfigs: {
+      '2026-2027': {
+        schoolYear: '2026-2027',
+        hk1Start: '2026-09-01',
+        hk1End: '2027-01-15',
+        hk2Start: '2027-01-16',
+        hk2End: '2027-05-31',
+      },
+    },
     conductThresholds: { good: 90, fair: 80, average: 65 },
   },
   students: INITIAL_STUDENTS,

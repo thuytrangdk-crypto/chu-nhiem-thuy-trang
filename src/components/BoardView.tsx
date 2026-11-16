@@ -37,6 +37,7 @@ import {
   formatFileSize,
 } from '../utils/helpers';
 import { getTop5AcademicHonors } from '../utils/academicHelpers';
+import { deduplicateDisciplineRecords, getSemesterBasePoints } from '../utils/semesterHelpers';
 import {
   getYouTubeEmbedUrl,
   getGoogleDriveVideoEmbed,
@@ -155,9 +156,10 @@ export const BoardView: React.FC<BoardViewProps> = ({
 
   // Danh sách học sinh cần cố gắng về thi đua/nề nếp trong tháng
   const bottomStudents = useMemo(() => {
-    const baseScore = state.config.initialPoints ?? 100;
+    const baseScore = getSemesterBasePoints(state.config);
+    const dedupedDiscipline = deduplicateDisciplineRecords(state.discipline);
     const scores = state.students.map((student) => {
-      const monthDiscipline = state.discipline.filter(
+      const monthDiscipline = dedupedDiscipline.filter(
         (d) => d.studentId === student.id && d.date.startsWith(selectedMonth)
       );
 
@@ -176,7 +178,7 @@ export const BoardView: React.FC<BoardViewProps> = ({
       .filter((s) => s.totalMinus > 0 || s.points < baseScore)
       .sort((a, b) => a.points - b.points)
       .slice(0, 5);
-  }, [state.students, state.discipline, selectedMonth, state.config.initialPoints]);
+  }, [state.students, state.discipline, selectedMonth, state.config]);
 
   const filteredNotices = useMemo(() => {
     const query = noticeSearch.trim().toLowerCase();
