@@ -113,12 +113,12 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
     wasOpenRef.current = isOpen;
   }, [isOpen, violationRules]);
 
-  // Auto-resize shared note textarea smoothly (42px initial, expands up to 112px for longer notes)
+  // Auto-resize shared note textarea smoothly (38px single-row height matching Date & Rule, expands up to 76px)
   useEffect(() => {
     const el = noteTextareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const nextHeight = Math.min(Math.max(el.scrollHeight, 42), 112);
+    const nextHeight = Math.min(Math.max(el.scrollHeight, 38), 76);
     el.style.height = `${nextHeight}px`;
   }, [commonNote, isOpen]);
 
@@ -408,27 +408,27 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
       aria-label="Ghi nhận vi phạm hàng loạt"
     >
       <div
-        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[92vh] lg:max-h-[820px] overflow-hidden flex flex-col border border-[#E8DEDA]"
+        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[94vh] lg:max-h-[860px] overflow-hidden flex flex-col border border-[#E8DEDA]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Pinned Modal Header */}
-        <div className="px-4 sm:px-6 py-3.5 border-b border-[#E8DEDA] bg-[#FFF8F4] flex items-center justify-between gap-3 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#922235] text-white flex items-center justify-center shadow-sm shrink-0">
-              <Users className="w-5 h-5" />
+        {/* Pinned Compact Modal Header */}
+        <div className="px-4 sm:px-5 py-2.5 border-b border-[#E8DEDA] bg-[#FFF8F4] flex items-center justify-between gap-3 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#922235] text-white flex items-center justify-center shadow-sm shrink-0">
+              <Users className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h3 className="text-sm sm:text-base font-black text-[#233146] uppercase tracking-tight">
                   Ghi nhận vi phạm hàng loạt
                 </h3>
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]">
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#F5EDEB] text-[#922235] border border-[#E8DEDA]">
                   Lớp {state.config.className}
                 </span>
+                <span className="text-[11px] text-[#697589] hidden md:inline">
+                  • Một lỗi – một ngày – nhiều học sinh
+                </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-[#697589] mt-0.5 truncate">
-                Một lỗi – một ngày – nhiều học sinh • Tái sử dụng đúng danh mục lỗi và điểm trừ hiện có
-              </p>
             </div>
           </div>
 
@@ -436,96 +436,103 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer shrink-0 disabled:opacity-45 disabled:cursor-not-allowed"
+            className="w-8 h-8 rounded-full bg-white hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer shrink-0 disabled:opacity-45 disabled:cursor-not-allowed"
             title="Đóng"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Pinned Preview-Only Mode Banner */}
+        {/* Pinned Preview-Only Mode Banner (only shown if persistence is explicitly disabled) */}
         {!isPersistenceEnabled && (
-          <div className="px-4 sm:px-6 py-2 bg-amber-50 border-b border-amber-200 flex items-center gap-2 text-amber-900 text-[11px] sm:text-xs shrink-0">
-            <Eye className="w-4 h-4 text-amber-600 shrink-0" />
+          <div className="px-4 sm:px-5 py-1.5 bg-amber-50 border-b border-amber-200 flex items-center gap-2 text-amber-900 text-[11px] shrink-0">
+            <Eye className="w-3.5 h-3.5 text-amber-600 shrink-0" />
             <span className="font-semibold">
               Chế độ kiểm tra giao diện &amp; xem trước: Chưa kích hoạt ghi dữ liệu thật vào Supabase.
             </span>
           </div>
         )}
 
-        {/* Main Workspace: Independent Left & Right Scroll Columns on Desktop (no nested scrollbars) */}
-        <div className="flex-1 min-h-0 bg-[#FFF8F4]/40 overflow-y-auto lg:overflow-hidden grid grid-cols-1 lg:grid-cols-12 gap-4 p-3 sm:p-4 [overflow-anchor:none]">
-          {/* LEFT COLUMN (7 cols): Compact Violation Config + Independent Student List */}
-          <div className="lg:col-span-7 flex flex-col gap-3 min-h-0">
-            {/* Step 1: Compact Violation Info */}
-            <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3.5 space-y-2.5 shadow-2xs shrink-0">
-              <div className="flex items-center justify-between border-b border-[#E8DEDA] pb-2">
-                <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
-                  <FileWarning className="w-3.5 h-3.5 text-[#922235]" />
-                  <span>1. Thông tin lỗi vi phạm</span>
-                </h4>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] font-bold text-[#922235] bg-[#F5EDEB] px-2 py-0.5 rounded-lg border border-[#E8DEDA]">
-                    {semesterDisplayLabel} • {dateResolution.schoolYear}
-                  </span>
-                  <span className="text-[11px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
-                    {selectedRule ? `-${selectedRule.points}đ / HS` : '--'}
-                  </span>
-                </div>
+        {/* Main Workspace: Compact Full-Width Step 1 Bar + Maximized Left (Step 2) / Right (Step 3) Columns */}
+        <div className="flex-1 min-h-0 bg-[#FFF8F4]/40 overflow-y-auto lg:overflow-hidden flex flex-col gap-2.5 p-2.5 sm:p-3.5 [overflow-anchor:none]">
+          {/* Step 1: Ultra-Compact Single-Row Violation Info (Date + Rule + Shared Note on 1 row) */}
+          <div className="bg-white rounded-2xl border border-[#E8DEDA] px-3.5 py-2.5 shadow-2xs shrink-0 space-y-2">
+            <div className="flex items-center justify-between gap-2 border-b border-[#E8DEDA]/80 pb-1.5">
+              <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
+                <FileWarning className="w-3.5 h-3.5 text-[#922235]" />
+                <span>1. Thông tin lỗi vi phạm</span>
+              </h4>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] font-bold text-[#922235] bg-[#F5EDEB] px-2 py-0.5 rounded-lg border border-[#E8DEDA]">
+                  {semesterDisplayLabel} • {dateResolution.schoolYear}
+                </span>
+                <span className="text-[11px] font-black text-rose-700 bg-rose-50 px-2 py-0.5 rounded-lg border border-rose-200">
+                  {selectedRule ? `-${selectedRule.points}đ / HS` : '--'}
+                </span>
               </div>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
-                {/* Date */}
-                <div className="sm:col-span-5">
-                  <label className="block text-[11px] font-bold text-[#233146] mb-1">
-                    Ngày vi phạm <span className="text-red-500">*</span>
-                  </label>
-                  <div className="relative">
-                    <Calendar className="w-3.5 h-3.5 text-[#922235] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    <input
-                      type="date"
-                      value={violationDate}
-                      onChange={(e) => {
-                        setPreviewSimulationResult(null);
-                        setSaveErrorSummary(null);
-                        setViolationDate(e.target.value);
-                      }}
-                      className="w-full pl-8 pr-2.5 py-2 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs font-bold text-[#233146] focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Violation Rule Selector */}
-                <div className="sm:col-span-7">
-                  <label className="block text-[11px] font-bold text-[#233146] mb-1">
-                    Lỗi vi phạm (Danh mục đã cài đặt) <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={selectedRuleId}
+            {/* Single Row: 1. Compact Date | 2. Compact Rule | 3. Shared Note taking remaining width */}
+            <div className="flex flex-col sm:flex-row sm:items-start gap-2">
+              {/* 1. Narrow Violation Date (just wide enough for dd/mm/yyyy + calendar icon) */}
+              <div className="w-full sm:w-[152px] shrink-0">
+                <label
+                  htmlFor="batch-violation-date"
+                  className="block text-[11px] font-bold text-[#233146] mb-1"
+                >
+                  Ngày vi phạm <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Calendar className="w-3.5 h-3.5 text-[#922235] absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id="batch-violation-date"
+                    type="date"
+                    value={violationDate}
                     onChange={(e) => {
                       setPreviewSimulationResult(null);
                       setSaveErrorSummary(null);
-                      setSelectedRuleId(e.target.value);
+                      setViolationDate(e.target.value);
                     }}
-                    className="w-full px-2.5 py-2 bg-white border border-[#E8DEDA] rounded-xl text-xs font-semibold text-[#233146] focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none cursor-pointer"
-                  >
-                    {violationRules.length === 0 ? (
-                      <option value="">
-                        Chưa có lỗi vi phạm nào (vào Cài đặt → Quy tắc thi đua)
-                      </option>
-                    ) : (
-                      violationRules.map((rule) => (
-                        <option key={rule.id} value={rule.id}>
-                          {rule.name} (-{rule.points}đ)
-                        </option>
-                      ))
-                    )}
-                  </select>
+                    className="w-full h-[38px] pl-8 pr-2 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs font-bold text-[#233146] focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none"
+                  />
                 </div>
               </div>
 
-              {/* Row 2: Full-width auto-expanding Shared Note */}
-              <div>
+              {/* 2. Compact Violation Rule Selector (just wide enough for selected rule + dropdown icon) */}
+              <div className="w-full sm:w-[235px] md:w-[265px] shrink-0">
+                <label
+                  htmlFor="batch-violation-rule"
+                  className="block text-[11px] font-bold text-[#233146] mb-1 truncate"
+                >
+                  Lỗi vi phạm <span className="text-red-500">*</span>
+                </label>
+                <select
+                  id="batch-violation-rule"
+                  value={selectedRuleId}
+                  onChange={(e) => {
+                    setPreviewSimulationResult(null);
+                    setSaveErrorSummary(null);
+                    setSelectedRuleId(e.target.value);
+                  }}
+                  title={selectedRule ? `${selectedRule.name} (-${selectedRule.points}đ)` : ''}
+                  className="w-full h-[38px] px-2.5 bg-white border border-[#E8DEDA] rounded-xl text-xs font-semibold text-[#233146] focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none cursor-pointer truncate"
+                >
+                  {violationRules.length === 0 ? (
+                    <option value="">
+                      Chưa có lỗi vi phạm nào (Cài đặt → Quy tắc)
+                    </option>
+                  ) : (
+                    violationRules.map((rule) => (
+                      <option key={rule.id} value={rule.id}>
+                        {rule.name} (-{rule.points}đ)
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* 3. Shared Note occupying remaining horizontal width on the SAME row */}
+              <div className="flex-1 min-w-0">
                 <label
                   htmlFor="batch-violation-common-note"
                   className="block text-[11px] font-bold text-[#233146] mb-1"
@@ -543,22 +550,25 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                     setCommonNote(e.target.value);
                   }}
                   placeholder="Ghi chú chung (tùy chọn, VD: Tiết 2 môn Toán, không làm bài tập về nhà...)"
-                  className="w-full min-h-[42px] max-h-28 px-3 py-2.5 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs text-[#233146] leading-relaxed focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none resize-none overflow-y-auto custom-scrollbar"
+                  className="w-full min-h-[38px] max-h-[76px] px-3 py-2 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs text-[#233146] leading-snug focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none resize-none overflow-y-auto custom-scrollbar"
                 />
               </div>
-
-              {/* Out of configured semester range warning */}
-              {!dateResolution.isWithinConfiguredRange && dateResolution.warningMessage && (
-                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed flex items-start gap-2">
-                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
-                  <span>{dateResolution.warningMessage}</span>
-                </div>
-              )}
             </div>
 
-            {/* Step 2: Multi-Student Selector with Maximized Independent Scroll Area */}
-            <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3.5 flex flex-col gap-2 shadow-2xs flex-1 min-h-[360px] lg:min-h-0 overflow-hidden">
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8DEDA] pb-2 shrink-0">
+            {/* Out of configured semester range warning */}
+            {!dateResolution.isWithinConfiguredRange && dateResolution.warningMessage && (
+              <div className="px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-snug flex items-start gap-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                <span>{dateResolution.warningMessage}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Lower Split Workspace: Left (8 cols - Maximized Student Selector) & Right (4 cols - Live Preview) */}
+          <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 gap-3">
+            {/* Step 2: Maximized Multi-Student Selector with Independent Scroll Area */}
+            <div className="lg:col-span-8 bg-white rounded-2xl border border-[#E8DEDA] p-3 flex flex-col gap-2 shadow-2xs min-h-[380px] lg:min-h-0 overflow-hidden">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8DEDA] pb-1.5 shrink-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
                     <CheckSquare className="w-3.5 h-3.5 text-[#922235]" />
@@ -787,11 +797,10 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                 )}
               </div>
             </div>
-          </div>
 
-          {/* RIGHT COLUMN (5 cols): Independent Live Preview Panel */}
-          <div className="lg:col-span-5 flex flex-col min-h-[280px] lg:min-h-0">
-            <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3.5 sm:p-4 flex flex-col gap-3 shadow-xs flex-1 min-h-0 overflow-hidden">
+            {/* RIGHT COLUMN (4 cols): Independent Live Preview Panel */}
+            <div className="lg:col-span-4 flex flex-col min-h-[260px] lg:min-h-0">
+              <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3 flex flex-col gap-2.5 shadow-xs flex-1 min-h-0 overflow-hidden">
               <div className="flex items-center justify-between border-b border-[#E8DEDA] pb-2 shrink-0">
                 <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
                   <Eye className="w-3.5 h-3.5 text-[#922235]" />
@@ -958,10 +967,11 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
               )}
             </div>
           </div>
+          </div>
         </div>
 
         {/* Pinned Footer (Always Visible) */}
-        <div className="px-4 sm:px-6 py-3 border-t border-[#E8DEDA] bg-[#FFF8F4] flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
+        <div className="px-4 sm:px-5 py-2.5 border-t border-[#E8DEDA] bg-[#FFF8F4] flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
           <div className="text-[11px] sm:text-xs text-[#697589] text-center sm:text-left flex items-center gap-1.5">
             {isPersistenceEnabled ? (
               <>
