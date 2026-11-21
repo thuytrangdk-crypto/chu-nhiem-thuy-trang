@@ -30,6 +30,7 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   X,
+  Users,
 } from 'lucide-react';
 import {
   AppState,
@@ -66,6 +67,7 @@ import { exportStudentViolationsToExcel } from '../utils/violationExcelHelper';
 import { PrintReportModal } from './PrintReportModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ConfirmModal } from './ConfirmModal';
+import { BatchViolationModal } from './BatchViolationModal';
 
 interface StudentProfileModalProps {
   studentId: string | null;
@@ -132,6 +134,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isAddNoteModalOpen, setIsAddNoteModalOpen] = useState(false);
+  const [isBatchViolationOpen, setIsBatchViolationOpen] = useState(false);
   const [confirmDeleteDisciplineId, setConfirmDeleteDisciplineId] = useState<string | null>(null);
   const [confirmDeleteNoteId, setConfirmDeleteNoteId] = useState<string | null>(null);
   const [confirmDeleteAttendanceId, setConfirmDeleteAttendanceId] = useState<string | null>(null);
@@ -1258,7 +1261,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   {/* Left Column: Direct Logging / Editing Form (Teacher only) */}
                   {isTeacher && (
                     <div className="lg:col-span-1 bg-[#FFF8F4]/70 p-5 rounded-2xl border border-[#E8DEDA] shadow-xs space-y-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
                         <h4 className="text-sm font-bold text-[#233146] flex items-center gap-2">
                           {editingDisciplineId ? (
                             <Edit2 className="w-4 h-4 text-[#922235]" />
@@ -1269,16 +1272,28 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                             {editingDisciplineId ? 'Chỉnh sửa sự việc' : 'Ghi nhận sự việc'}
                           </span>
                         </h4>
-                        {editingDisciplineId && (
-                          <button
-                            type="button"
-                            onClick={handleCancelEditDiscipline}
-                            className="text-[11px] font-bold text-[#697589] hover:text-[#922235] flex items-center gap-1 cursor-pointer"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                            <span>Hủy sửa</span>
-                          </button>
-                        )}
+                        <div className="flex items-center gap-1.5">
+                          {editingDisciplineId ? (
+                            <button
+                              type="button"
+                              onClick={handleCancelEditDiscipline}
+                              className="text-[11px] font-bold text-[#697589] hover:text-[#922235] flex items-center gap-1 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Hủy sửa</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setIsBatchViolationOpen(true)}
+                              className="px-2.5 py-1.5 bg-white hover:bg-[#F5EDEB] text-[#922235] font-bold rounded-xl text-[11px] border border-[#922235]/35 flex items-center gap-1 transition-colors cursor-pointer shadow-2xs whitespace-nowrap"
+                              title="Ghi nhận cùng một lỗi vi phạm cho nhiều học sinh cùng ngày"
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              <span>+ Ghi nhận hàng loạt</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
 
                       <form onSubmit={handleSubmitDiscipline} className="space-y-3.5">
@@ -1901,6 +1916,18 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         }}
         onCancel={() => setConfirmDeleteAttendanceId(null)}
       />
+
+      {/* Batch Violation Modal (Preview-only mode until teacher activates Supabase save) */}
+      {isTeacher && (
+        <BatchViolationModal
+          isOpen={isBatchViolationOpen}
+          state={state}
+          onClose={() => setIsBatchViolationOpen(false)}
+          onShowToast={onShowToast}
+          isPersistenceEnabled={false}
+          highlightStudentId={student.id}
+        />
+      )}
     </div>
   );
 };

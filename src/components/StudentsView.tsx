@@ -16,6 +16,7 @@ import {
   UserCheck,
   KeyRound,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import { AppState, Gender, Student } from '../types';
 import {
@@ -31,6 +32,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { EmulationExportModal } from './EmulationExportModal';
 import { StudentPasswordBatchModal } from './StudentPasswordBatchModal';
 import { ResetStudentPasswordModal } from './ResetStudentPasswordModal';
+import { BatchViolationModal } from './BatchViolationModal';
 
 interface StudentsViewProps {
   state: AppState;
@@ -74,6 +76,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [isConfirmClearAllOpen, setIsConfirmClearAllOpen] = useState(false);
   const [isEmulationExportOpen, setIsEmulationExportOpen] = useState(false);
+  const [isBatchViolationOpen, setIsBatchViolationOpen] = useState(false);
   const [isBatchPasswordModalOpen, setIsBatchPasswordModalOpen] = useState(false);
   const [studentToResetPassword, setStudentToResetPassword] = useState<{
     student: Student;
@@ -282,6 +285,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 >
                   <Award className="w-3.5 h-3.5 text-[#922235]" />
                   <span>Xuất Excel thi đua</span>
+                </button>
+
+                {/* + Ghi nhận hàng loạt */}
+                <button
+                  type="button"
+                  onClick={() => setIsBatchViolationOpen(true)}
+                  className="px-3 py-2 bg-[#FFF8F4] hover:bg-[#F5EDEB] text-[#922235] font-bold rounded-xl text-xs border border-[#922235]/40 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                  title="Ghi nhận một lỗi vi phạm cho nhiều học sinh cùng ngày"
+                >
+                  <Users className="w-3.5 h-3.5 text-[#922235]" />
+                  <span>+ Ghi nhận hàng loạt</span>
                 </button>
 
                 {/* Import Excel */}
@@ -737,6 +751,17 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         onClose={() => setIsEmulationExportOpen(false)}
         onShowToast={onShowToast}
       />
+
+      {/* Batch Violation Modal (Preview-only mode until teacher activates Supabase save) */}
+      {isTeacher && (
+        <BatchViolationModal
+          isOpen={isBatchViolationOpen}
+          state={state}
+          onClose={() => setIsBatchViolationOpen(false)}
+          onShowToast={onShowToast}
+          isPersistenceEnabled={false}
+        />
+      )}
 
       {/* Batch 10-Digit Password Update Modal for 8A3 */}
       <StudentPasswordBatchModal
