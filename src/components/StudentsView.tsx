@@ -18,7 +18,7 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
-import { AppState, Gender, Student } from '../types';
+import { AppState, DisciplineRecord, Gender, Student } from '../types';
 import {
   exportStudentsToExcel,
   formatDisplayDate,
@@ -26,6 +26,7 @@ import {
   getTodayStr,
 } from '../utils/helpers';
 import { detectActiveSemester, filterDisciplineBySemester } from '../utils/semesterHelpers';
+import { BatchSaveResult } from '../utils/batchDisciplineHelpers';
 import { StudentFormModal } from './StudentFormModal';
 import { ExcelImportModal } from './ExcelImportModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -45,6 +46,10 @@ interface StudentsViewProps {
   onResetStudentPassword?: (studentId: string, newPassword: string) => void;
   onRemoveSampleStudents?: () => void;
   onClearAllStudents?: () => void;
+  onAddBatchDiscipline?: (
+    records: Omit<DisciplineRecord, 'id'>[],
+    batchId: string
+  ) => Promise<BatchSaveResult>;
   isTeacher: boolean;
   currentStudentId?: string | null;
   onShowToast?: (msg: string, type?: 'success' | 'error') => void;
@@ -61,6 +66,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   onResetStudentPassword,
   onRemoveSampleStudents,
   onClearAllStudents,
+  onAddBatchDiscipline,
   isTeacher,
   currentStudentId,
   onShowToast,
@@ -752,14 +758,15 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         onShowToast={onShowToast}
       />
 
-      {/* Batch Violation Modal (Preview-only mode until teacher activates Supabase save) */}
+      {/* Batch Violation Modal (Official Live Supabase Persistence) */}
       {isTeacher && (
         <BatchViolationModal
           isOpen={isBatchViolationOpen}
           state={state}
           onClose={() => setIsBatchViolationOpen(false)}
           onShowToast={onShowToast}
-          isPersistenceEnabled={false}
+          isPersistenceEnabled={true}
+          onConfirmBatchSave={onAddBatchDiscipline}
         />
       )}
 

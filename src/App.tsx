@@ -14,6 +14,10 @@ import {
 import { DEFAULT_INITIAL_STATE } from './defaultData';
 import { generateId, getTodayStr } from './utils/helpers';
 import { resolveDisciplinePeriod } from './utils/semesterHelpers';
+import {
+  BatchSaveResult,
+  executeAtomicBatchDisciplineSave,
+} from './utils/batchDisciplineHelpers';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginModal } from './components/LoginModal';
@@ -27,7 +31,12 @@ import { StudentProfileModal } from './components/StudentProfileModal';
 import { ClassSwitchModal } from './components/ClassSwitchModal';
 import { SupabaseModal } from './components/SupabaseModal';
 import { ChangePasswordModal } from './components/ChangePasswordModal';
-import { supabaseService, SyncStatus, CLIENT_SESSION_ID } from './services/supabaseService';
+import {
+  supabaseService,
+  SyncStatus,
+  CLIENT_SESSION_ID,
+  getVerifiedSessionRole,
+} from './services/supabaseService';
 import { CheckCircle2, AlertCircle, Menu } from 'lucide-react';
 
 const STORAGE_KEY = 'so_chu_nhiem_8a3_data';
@@ -72,6 +81,8 @@ export default function App() {
 
   const latestStateRef = useRef<AppState>(state);
   latestStateRef.current = state;
+  const batchSaveInFlightRef = useRef<boolean>(false);
+  const completedBatchIdsRef = useRef<Set<string>>(new Set());
 
   const [authRole, setAuthRole] = useState<UserRole | null>(() => {
     try {
@@ -777,6 +788,67 @@ export default function App() {
     }
   };
 
+  // Atomic batch violation persistence (reuses existing Supabase table & single-student scoring/attendance rules)
+  const handleAddBatchDiscipline = async (
+    records: Omit<DisciplineRecord, 'id'>[],
+    batchId: string
+  ): Promise<BatchSaveResult> => {
+    if (batchSaveInFlightRef.current) {
+      return {
+        success: false,
+        savedCount: 0,
+        failedCount: records.length,
+        error: 'Đang xử lý lưu dữ liệu hàng loạt. Vui lòng đợi hoàn tất.',
+      };
+    }
+
+    if (batchId && completedBatchIdsRef.current.has(batchId)) {
+      return {
+        success: true,
+        savedCount: records.length,
+        failedCount: 0,
+        skippedDuplicateCount: records.length,
+        createdRecords: [],
+      };
+    }
+
+    batchSaveInFlightRef.current = true;
+    try {
+      const result = await executeAtomicBatchDisciplineSave({
+        payloads: records,
+        batchId,
+        isTeacherAuthorized: () =>
+          authRole === 'teacher' && getVerifiedSessionRole() === 'teacher',
+        getCurrentState: () => latestStateRef.current,
+        saveToSupabase: (nextState) => supabaseService.saveState(nextState),
+        clientSessionId: CLIENT_SESSION_ID,
+        commitState: (nextState) => {
+          latestStateRef.current = nextState;
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState));
+          } catch (e) {
+            console.error('Error saving batch discipline state to localStorage', e);
+          }
+          setState(nextState);
+          setSyncStatus((s) => ({
+            ...s,
+            isConnected: true,
+            isTableReady: true,
+            lastSyncedAt: new Date().toLocaleTimeString('vi-VN'),
+            errorMessage: null,
+          }));
+        },
+      });
+
+      if (result.success && batchId) {
+        completedBatchIdsRef.current.add(batchId);
+      }
+      return result;
+    } finally {
+      batchSaveInFlightRef.current = false;
+    }
+  };
+
   const handleUpdateDiscipline = (updatedRecord: DisciplineRecord) => {
     const resolved = resolveDisciplinePeriod(updatedRecord.date, latestStateRef.current.config);
     const normalizedRecord: DisciplineRecord = {
@@ -1349,6 +1421,7 @@ export default function App() {
                     onResetStudentPassword={handleResetStudentPassword}
                     onRemoveSampleStudents={handleRemoveSampleStudents}
                     onClearAllStudents={handleClearAllStudents}
+                    onAddBatchDiscipline={handleAddBatchDiscipline}
                     isTeacher={authRole === 'teacher'}
                     currentStudentId={authStudentId}
                     onShowToast={showToast}
@@ -1488,6 +1561,7 @@ export default function App() {
               onSaveGrades={handleSaveGrades}
               onSaveAcademicGrades={handleSaveStudentAcademicGrades}
               onAddDiscipline={handleAddDiscipline}
+              onAddBatchDiscipline={handleAddBatchDiscipline}
               onUpdateDiscipline={handleUpdateDiscipline}
               onDeleteDiscipline={handleDeleteDiscipline}
               onDeleteAttendance={handleDeleteAttendance}

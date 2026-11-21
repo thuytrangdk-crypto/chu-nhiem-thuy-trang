@@ -3,7 +3,6 @@ import { createPortal } from 'react-dom';
 import {
   X,
   Users,
-  Search,
   CheckSquare,
   Square,
   AlertTriangle,
@@ -13,6 +12,8 @@ import {
   CheckCircle2,
   ShieldAlert,
   RotateCcw,
+  Loader2,
+  Database,
 } from 'lucide-react';
 import { AppState, DisciplineRecord } from '../types';
 import { formatDisplayDate, formatStudentCode } from '../utils/helpers';
@@ -23,8 +24,12 @@ import {
   resolveDisciplinePeriod,
 } from '../utils/semesterHelpers';
 import {
+  BatchGenderFilter,
+  BatchSaveResult,
   buildBatchDisciplinePayloads,
   buildStudentGroupData,
+  createBatchRequestId,
+  filterBatchStudents,
   findExistingSameDayViolationStudentIds,
   getViolationRules,
 } from '../utils/batchDisciplineHelpers';
@@ -35,13 +40,13 @@ interface BatchViolationModalProps {
   onClose: () => void;
   onShowToast?: (msg: string, type?: 'success' | 'error') => void;
   /**
-   * Preview-only mode by default (false).
-   * Real Supabase persistence remains disabled until explicitly activated.
+   * Live Supabase persistence is enabled by default for official teacher usage.
    */
   isPersistenceEnabled?: boolean;
   onConfirmBatchSave?: (
-    records: Omit<DisciplineRecord, 'id'>[]
-  ) => Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string };
+    records: Omit<DisciplineRecord, 'id'>[],
+    batchId: string
+  ) => Promise<BatchSaveResult> | BatchSaveResult;
   highlightStudentId?: string | null;
 }
 
@@ -50,7 +55,7 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
   state,
   onClose,
   onShowToast,
-  isPersistenceEnabled = false,
+  isPersistenceEnabled = true,
   onConfirmBatchSave,
   highlightStudentId,
 }) => {
@@ -60,9 +65,16 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
   const [violationDate, setViolationDate] = useState<string>(() => getTodayVietnamYMD());
   const [selectedRuleId, setSelectedRuleId] = useState<string>(() => violationRules[0]?.id || '');
   const [commonNote, setCommonNote] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeGroupFilter, setActiveGroupFilter] = useState<number | 'all'>('all');
+  const [activeGenderFilter, setActiveGenderFilter] = useState<BatchGenderFilter>('all');
   const [selectedStudentIds, setSelectedStudentIds] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isFinalConfirmOpen, setIsFinalConfirmOpen] = useState<boolean>(false);
+  const [saveErrorSummary, setSaveErrorSummary] = useState<{
+    savedCount: number;
+    failedCount: number;
+    error: string;
+  } | null>(null);
   const [previewSimulationResult, setPreviewSimulationResult] = useState<{
     count: number;
     date: string;
@@ -74,6 +86,12 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
 
   // Track open transition so background config updates never wipe current selection
   const wasOpenRef = useRef<boolean>(false);
+  // Auto-expanding shared note textarea ref
+  const noteTextareaRef = useRef<HTMLTextAreaElement>(null);
+  // Prevent rapid double-click duplicate submissions
+  const submitInFlightRef = useRef<boolean>(false);
+  // Idempotent batchId tied to the exact current selection signature so safe retries never duplicate records
+  const pendingBatchRef = useRef<{ signature: string; batchId: string } | null>(null);
 
   useEffect(() => {
     if (isOpen && !wasOpenRef.current) {
@@ -82,13 +100,27 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
         violationRules.some((r) => r.id === prev) ? prev : violationRules[0]?.id || ''
       );
       setCommonNote('');
-      setSearchQuery('');
+      setActiveGroupFilter('all');
+      setActiveGenderFilter('all');
       setSelectedStudentIds([]);
       setIsSubmitting(false);
+      setIsFinalConfirmOpen(false);
+      setSaveErrorSummary(null);
       setPreviewSimulationResult(null);
+      submitInFlightRef.current = false;
+      pendingBatchRef.current = null;
     }
     wasOpenRef.current = isOpen;
   }, [isOpen, violationRules]);
+
+  // Auto-resize shared note textarea smoothly (42px initial, expands up to 112px for longer notes)
+  useEffect(() => {
+    const el = noteTextareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    const nextHeight = Math.min(Math.max(el.scrollHeight, 42), 112);
+    el.style.height = `${nextHeight}px`;
+  }, [commonNote, isOpen]);
 
   // Lock background page scroll while modal is open and restore original overflow on close
   useEffect(() => {
@@ -127,22 +159,28 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
     [sortedStudents, state.seatingChart, state.seatingLayout]
   );
 
-  // Filtered students for search box
-  const filteredStudents = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return sortedStudents;
-    return sortedStudents.filter((s) => {
-      const code = formatStudentCode(s.studentCode, studentIndexMap[s.id] || 1).toLowerCase();
-      const groupNum = studentGroupMap[s.id];
-      const groupLabel = groupNum ? `tổ ${groupNum}` : '';
-      return (
-        s.name.toLowerCase().includes(q) ||
-        s.id.toLowerCase().includes(q) ||
-        code.includes(q) ||
-        groupLabel.includes(q)
-      );
-    });
-  }, [sortedStudents, searchQuery, studentIndexMap, studentGroupMap]);
+  // Gender counts within the currently selected group (strictly from student.gender)
+  const genderCountsInGroup = useMemo(() => {
+    const groupScoped = filterBatchStudents(sortedStudents, studentGroupMap, activeGroupFilter, 'all');
+    return {
+      Nam: groupScoped.filter((s) => s.gender === 'Nam').length,
+      Nữ: groupScoped.filter((s) => s.gender === 'Nữ').length,
+    };
+  }, [sortedStudents, studentGroupMap, activeGroupFilter]);
+
+  // Filtered students for display ONLY (never modifies selection state)
+  const filteredStudents = useMemo(
+    () =>
+      filterBatchStudents(
+        sortedStudents,
+        studentGroupMap,
+        activeGroupFilter,
+        activeGenderFilter
+      ),
+    [sortedStudents, studentGroupMap, activeGroupFilter, activeGenderFilter]
+  );
+
+  const isAnyFilterActive = activeGroupFilter !== 'all' || activeGenderFilter !== 'all';
 
   const selectedRule = useMemo(
     () => violationRules.find((r) => r.id === selectedRuleId) || null,
@@ -207,6 +245,7 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
 
   const toggleStudent = useCallback((studentId: string) => {
     setPreviewSimulationResult(null);
+    setSaveErrorSummary(null);
     setSelectedStudentIds((prev) =>
       prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
     );
@@ -214,59 +253,56 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
 
   const handleSelectAllFiltered = useCallback(() => {
     setPreviewSimulationResult(null);
+    setSaveErrorSummary(null);
     const filteredIds = filteredStudents.map((s) => s.id);
     setSelectedStudentIds((prev) => Array.from(new Set([...prev, ...filteredIds])));
   }, [filteredStudents]);
 
   const handleClearSelection = useCallback(() => {
     setPreviewSimulationResult(null);
+    setSaveErrorSummary(null);
     setSelectedStudentIds([]);
   }, []);
 
-  const handleToggleGroup = useCallback(
-    (groupStudentIds: string[]) => {
-      if (groupStudentIds.length === 0) return;
-      setPreviewSimulationResult(null);
-      setSelectedStudentIds((prev) => {
-        const prevSet = new Set(prev);
-        const allInGroupSelected = groupStudentIds.every((id) => prevSet.has(id));
-        if (allInGroupSelected) {
-          const toRemove = new Set(groupStudentIds);
-          return prev.filter((id) => !toRemove.has(id));
-        }
-        return Array.from(new Set([...prev, ...groupStudentIds]));
-      });
-    },
-    []
-  );
+  const handleToggleGroupFilter = useCallback((groupNumber: number | 'all') => {
+    setActiveGroupFilter((prev) => (prev === groupNumber ? 'all' : groupNumber));
+  }, []);
+
+  const handleToggleGenderFilter = useCallback((gender: 'Nam' | 'Nữ') => {
+    setActiveGenderFilter((prev) => (prev === gender ? 'all' : gender));
+  }, []);
 
   if (!isOpen) return null;
 
-  const handleConfirmSubmit = async () => {
-    if (isSubmitting) return;
+  const validateBeforeConfirm = (): boolean => {
     if (!selectedRule) {
       onShowToast?.('Vui lòng chọn lỗi vi phạm từ danh mục đã cài đặt.', 'error');
-      return;
+      return false;
     }
     if (!violationDate) {
       onShowToast?.('Vui lòng chọn ngày vi phạm.', 'error');
-      return;
+      return false;
     }
     if (selectedStudentIds.length === 0) {
       onShowToast?.('Vui lòng chọn ít nhất 1 học sinh để ghi nhận.', 'error');
-      return;
+      return false;
     }
+    return true;
+  };
 
-    const payloads = buildBatchDisciplinePayloads({
-      studentIds: selectedStudentIds,
-      date: violationDate,
-      rule: selectedRule,
-      note: commonNote,
-      config: state.config,
-    });
+  // Step 1: Click primary button -> either run preview check (if disabled) or open final confirmation dialog
+  const handlePrimaryConfirmClick = () => {
+    if (isSubmitting || submitInFlightRef.current) return;
+    if (!validateBeforeConfirm() || !selectedRule) return;
 
-    // PREVIEW / CHECK MODE (No writes to Supabase until explicitly activated)
     if (!isPersistenceEnabled || !onConfirmBatchSave) {
+      const payloads = buildBatchDisciplinePayloads({
+        studentIds: selectedStudentIds,
+        date: violationDate,
+        rule: selectedRule,
+        note: commonNote,
+        config: state.config,
+      });
       const semLabel = dateResolution.semester === 'HK1' ? 'Học kỳ I' : 'Học kỳ II';
       setPreviewSimulationResult({
         count: payloads.length,
@@ -283,26 +319,77 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
       return;
     }
 
-    // LIVE PERSISTENCE MODE
+    setSaveErrorSummary(null);
+    setIsFinalConfirmOpen(true);
+  };
+
+  // Step 2: Teacher explicitly confirms in the final dialog -> execute atomic Supabase write
+  const handleExecuteLiveSave = async () => {
+    if (isSubmitting || submitInFlightRef.current) return;
+    if (!validateBeforeConfirm() || !selectedRule || !onConfirmBatchSave) return;
+
+    const payloads = buildBatchDisciplinePayloads({
+      studentIds: selectedStudentIds,
+      date: violationDate,
+      rule: selectedRule,
+      note: commonNote,
+      config: state.config,
+    });
+
+    const selectionSignature = `${violationDate}|${selectedRule.id}|${commonNote.trim()}|${[
+      ...selectedStudentIds,
+    ]
+      .sort()
+      .join(',')}`;
+
+    if (!pendingBatchRef.current || pendingBatchRef.current.signature !== selectionSignature) {
+      pendingBatchRef.current = {
+        signature: selectionSignature,
+        batchId: createBatchRequestId(),
+      };
+    }
+
+    const activeBatchId = pendingBatchRef.current.batchId;
+
+    submitInFlightRef.current = true;
     setIsSubmitting(true);
+    setSaveErrorSummary(null);
+
     try {
-      const result = await onConfirmBatchSave(payloads);
+      const result = await onConfirmBatchSave(payloads, activeBatchId);
       if (result.success) {
+        pendingBatchRef.current = null;
+        setIsFinalConfirmOpen(false);
+        const savedCount = result.savedCount > 0 ? result.savedCount : payloads.length;
         onShowToast?.(
-          `Đã ghi nhận vi phạm thành công cho ${payloads.length} học sinh.`,
+          `Đã ghi nhận vi phạm thành công cho ${savedCount} học sinh.`,
           'success'
         );
         onClose();
       } else {
-        onShowToast?.(
-          result.error || 'Không thể lưu ghi nhận vi phạm hàng loạt. Dữ liệu chưa bị thay đổi.',
-          'error'
-        );
+        const errorMsg =
+          result.error ||
+          'Không thể lưu ghi nhận vi phạm hàng loạt lên Supabase. Dữ liệu chưa bị thay đổi.';
+        setIsFinalConfirmOpen(false);
+        setSaveErrorSummary({
+          savedCount: result.savedCount ?? 0,
+          failedCount: result.failedCount ?? payloads.length,
+          error: errorMsg,
+        });
+        onShowToast?.(errorMsg, 'error');
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      onShowToast?.(`Lỗi khi lưu vi phạm hàng loạt: ${msg}`, 'error');
+      const errorMsg = `Lỗi khi lưu vi phạm hàng loạt: ${msg}`;
+      setIsFinalConfirmOpen(false);
+      setSaveErrorSummary({
+        savedCount: 0,
+        failedCount: payloads.length,
+        error: errorMsg,
+      });
+      onShowToast?.(errorMsg, 'error');
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -313,13 +400,15 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
   const modalContent = (
     <div
       className="fixed inset-0 z-[160] flex items-center justify-center p-2 sm:p-4 bg-black/55 backdrop-blur-xs"
-      onClick={onClose}
+      onClick={() => {
+        if (!isSubmitting && !isFinalConfirmOpen) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Ghi nhận vi phạm hàng loạt"
     >
       <div
-        className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[92vh] lg:max-h-[820px] overflow-hidden flex flex-col border border-[#E8DEDA]"
+        className="relative bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[92vh] lg:max-h-[820px] overflow-hidden flex flex-col border border-[#E8DEDA]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Pinned Modal Header */}
@@ -345,8 +434,9 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
 
           <button
             type="button"
+            disabled={isSubmitting}
             onClick={onClose}
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white hover:bg-[#F5EDEB] text-[#697589] hover:text-[#233146] flex items-center justify-center border border-[#E8DEDA] transition-colors cursor-pointer shrink-0 disabled:opacity-45 disabled:cursor-not-allowed"
             title="Đóng"
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -397,6 +487,7 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                       value={violationDate}
                       onChange={(e) => {
                         setPreviewSimulationResult(null);
+                        setSaveErrorSummary(null);
                         setViolationDate(e.target.value);
                       }}
                       className="w-full pl-8 pr-2.5 py-2 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs font-bold text-[#233146] focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none"
@@ -413,6 +504,7 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                     value={selectedRuleId}
                     onChange={(e) => {
                       setPreviewSimulationResult(null);
+                      setSaveErrorSummary(null);
                       setSelectedRuleId(e.target.value);
                     }}
                     className="w-full px-2.5 py-2 bg-white border border-[#E8DEDA] rounded-xl text-xs font-semibold text-[#233146] focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none cursor-pointer"
@@ -432,17 +524,26 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                 </div>
               </div>
 
-              {/* Optional shared note (compact single line) */}
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                <input
-                  type="text"
+              {/* Row 2: Full-width auto-expanding Shared Note */}
+              <div>
+                <label
+                  htmlFor="batch-violation-common-note"
+                  className="block text-[11px] font-bold text-[#233146] mb-1"
+                >
+                  Ghi chú chung <span className="font-normal text-[#697589]">(không bắt buộc)</span>
+                </label>
+                <textarea
+                  id="batch-violation-common-note"
+                  ref={noteTextareaRef}
+                  rows={1}
                   value={commonNote}
                   onChange={(e) => {
                     setPreviewSimulationResult(null);
+                    setSaveErrorSummary(null);
                     setCommonNote(e.target.value);
                   }}
-                  placeholder="Ghi chú chung (tùy chọn, VD: Tiết 2 môn Toán, kiểm tra đầu giờ...)"
-                  className="flex-1 px-3 py-1.5 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs text-[#233146] focus:bg-white focus:ring-2 focus:ring-[#922235] outline-none"
+                  placeholder="Ghi chú chung (tùy chọn, VD: Tiết 2 môn Toán, không làm bài tập về nhà...)"
+                  className="w-full min-h-[42px] max-h-28 px-3 py-2.5 bg-[#FFF8F4]/50 border border-[#E8DEDA] rounded-xl text-xs text-[#233146] leading-relaxed focus:bg-white focus:ring-2 focus:ring-[#922235] focus:border-[#922235] outline-none resize-none overflow-y-auto custom-scrollbar"
                 />
               </div>
 
@@ -455,46 +556,45 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
               )}
             </div>
 
-            {/* Step 2: Multi-Student Selector with SINGLE Independent Scroll Area */}
-            <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3.5 flex flex-col gap-2.5 shadow-2xs flex-1 min-h-[340px] lg:min-h-0 overflow-hidden">
+            {/* Step 2: Multi-Student Selector with Maximized Independent Scroll Area */}
+            <div className="bg-white rounded-2xl border border-[#E8DEDA] p-3.5 flex flex-col gap-2 shadow-2xs flex-1 min-h-[360px] lg:min-h-0 overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E8DEDA] pb-2 shrink-0">
-                <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
-                  <CheckSquare className="w-3.5 h-3.5 text-[#922235]" />
-                  <span>2. Chọn học sinh lớp {state.config.className}</span>
-                </h4>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h4 className="text-[11px] font-black text-[#233146] uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5 text-[#922235]" />
+                    <span>2. Chọn học sinh lớp {state.config.className}</span>
+                  </h4>
+                  {isAnyFilterActive && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#FFF8F4] text-[#697589] border border-[#E8DEDA]">
+                      Đang hiện: {filteredStudents.length} HS
+                    </span>
+                  )}
+                </div>
                 <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-[#922235] text-white shadow-2xs">
                   Đã chọn: {selectedStudentIds.length} / {sortedStudents.length} HS
                 </span>
               </div>
 
-              {/* Search + Quick Selection Controls (Pinned above list) */}
-              <div className="space-y-2 shrink-0">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 text-[#697589] absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Tìm nhanh theo tên học sinh, mã HS hoặc tổ (VD: Tổ 1)..."
-                    className="w-full pl-9 pr-8 py-1.5 bg-[#FFF8F4]/60 border border-[#E8DEDA] rounded-xl text-xs font-medium text-[#233146] focus:bg-white focus:ring-2 focus:ring-[#922235] outline-none"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#697589] hover:text-[#233146] text-xs font-bold p-1 cursor-pointer"
-                      title="Xóa từ khóa"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
+              {/* Pure Display Filters (Tổ 1–4 + Nam/Nữ) + Clear Selection Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5 shrink-0">
+                <div className="flex flex-wrap items-center gap-1">
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => setActiveGroupFilter('all')}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                      activeGroupFilter === 'all'
+                        ? 'bg-[#233146] text-white border-[#233146] shadow-2xs'
+                        : 'bg-white text-[#233146] border-[#E8DEDA] hover:bg-[#F5EDEB]'
+                    }`}
+                    title="Hiển thị tất cả các tổ"
+                  >
+                    Tất cả
+                  </button>
 
-                <div className="flex flex-wrap items-center gap-1.5">
                   {groups.map((grp) => {
                     const count = grp.studentIds.length;
-                    const isGroupFullySelected =
-                      count > 0 && grp.studentIds.every((id) => selectedIdSet.has(id));
+                    const isActiveGroup = activeGroupFilter === grp.groupNumber;
                     const selectedInGroup = grp.studentIds.filter((id) =>
                       selectedIdSet.has(id)
                     ).length;
@@ -503,39 +603,76 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                       <button
                         key={grp.groupNumber}
                         type="button"
-                        disabled={count === 0}
                         onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => handleToggleGroup(grp.studentIds)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
-                          isGroupFullySelected
+                        onClick={() => handleToggleGroupFilter(grp.groupNumber)}
+                        className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                          isActiveGroup
                             ? 'bg-[#922235] text-white border-[#922235] shadow-2xs'
                             : selectedInGroup > 0
                             ? 'bg-[#F5EDEB] text-[#922235] border-[#922235]/50'
                             : 'bg-white text-[#233146] border-[#E8DEDA] hover:bg-[#F5EDEB]'
                         }`}
                         title={
-                          count === 0
-                            ? `${grp.label} chưa có học sinh trong Sơ đồ lớp`
-                            : isGroupFullySelected
-                            ? `Bấm để bỏ chọn cả ${grp.label}`
-                            : `Bấm để chọn cả ${grp.label} (${count} học sinh)`
+                          isActiveGroup
+                            ? `Đang lọc ${grp.label} — bấm lại để hiện tất cả các tổ`
+                            : `Lọc hiển thị học sinh ${grp.label} (${count} HS)`
                         }
                       >
-                        {grp.label} ({count})
+                        {grp.label}
+                        <span className="opacity-75 ml-0.5">({count})</span>
                       </button>
                     );
                   })}
 
-                  <span className="h-4 w-px bg-[#E8DEDA] mx-0.5 hidden sm:inline-block" />
+                  <span className="h-4 w-px bg-[#E8DEDA] mx-0.5" />
 
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleToggleGenderFilter('Nam')}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                      activeGenderFilter === 'Nam'
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                        : 'bg-white text-blue-700 border-[#E8DEDA] hover:bg-blue-50'
+                    }`}
+                    title={
+                      activeGenderFilter === 'Nam'
+                        ? 'Đang lọc học sinh Nam — bấm lại để bỏ lọc giới tính'
+                        : `Lọc hiển thị học sinh Nam (${genderCountsInGroup.Nam} HS)`
+                    }
+                  >
+                    Nam <span className="opacity-80">({genderCountsInGroup.Nam})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleToggleGenderFilter('Nữ')}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-colors cursor-pointer ${
+                      activeGenderFilter === 'Nữ'
+                        ? 'bg-pink-600 text-white border-pink-600 shadow-2xs'
+                        : 'bg-white text-pink-700 border-[#E8DEDA] hover:bg-pink-50'
+                    }`}
+                    title={
+                      activeGenderFilter === 'Nữ'
+                        ? 'Đang lọc học sinh Nữ — bấm lại để bỏ lọc giới tính'
+                        : `Lọc hiển thị học sinh Nữ (${genderCountsInGroup.Nữ} HS)`
+                    }
+                  >
+                    Nữ <span className="opacity-80">({genderCountsInGroup.Nữ})</span>
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onMouseDown={(e) => e.preventDefault()}
                     onClick={handleSelectAllFiltered}
                     disabled={filteredStudents.length === 0}
-                    className="px-2.5 py-1 rounded-lg bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#233146] text-[11px] font-bold border border-[#E8DEDA] transition-colors cursor-pointer disabled:opacity-50"
+                    className="px-2.5 py-1 rounded-lg bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#233146] text-[11px] font-bold border border-[#E8DEDA] transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                    title="Chỉ chọn các học sinh đang hiển thị theo bộ lọc hiện tại (giữ nguyên các học sinh đã chọn ở tổ/nhóm khác)"
                   >
-                    Chọn tất cả{searchQuery.trim() ? ` (${filteredStudents.length})` : ''}
+                    Chọn tất cả{isAnyFilterActive ? ` (${filteredStudents.length})` : ''}
                   </button>
                   <button
                     type="button"
@@ -543,9 +680,10 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                     onClick={handleClearSelection}
                     disabled={selectedStudentIds.length === 0}
                     className="px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-[#922235] text-[11px] font-bold border border-[#E8DEDA] flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                    title="Bỏ chọn toàn bộ học sinh đã chọn"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    <span>Bỏ chọn</span>
+                    <span>Bỏ chọn tất cả</span>
                   </button>
                 </div>
               </div>
@@ -556,8 +694,23 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                 className="flex-1 min-h-0 border border-[#E8DEDA] rounded-xl overflow-y-auto overscroll-contain bg-white divide-y divide-[#E8DEDA]/70 custom-scrollbar [overflow-anchor:none] [scroll-behavior:auto]"
               >
                 {filteredStudents.length === 0 ? (
-                  <div className="py-10 px-4 text-center text-xs text-[#697589] italic">
-                    Không tìm thấy học sinh phù hợp với từ khóa “{searchQuery}”.
+                  <div className="py-10 px-4 text-center space-y-2">
+                    <p className="text-xs text-[#697589] italic">
+                      Không có học sinh nào thuộc bộ lọc hiện tại.
+                    </p>
+                    {isAnyFilterActive && (
+                      <button
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => {
+                          setActiveGroupFilter('all');
+                          setActiveGenderFilter('all');
+                        }}
+                        className="px-3 py-1 rounded-lg bg-[#F5EDEB] hover:bg-[#E8DEDA] text-[#922235] text-[11px] font-bold border border-[#E8DEDA] cursor-pointer"
+                      >
+                        Hiển thị toàn bộ lớp
+                      </button>
+                    )}
                   </div>
                 ) : (
                   filteredStudents.map((student) => {
@@ -609,6 +762,15 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                         </div>
 
                         <div className="flex items-center gap-1.5 shrink-0">
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md border ${
+                              student.gender === 'Nam'
+                                ? 'bg-blue-50/70 text-blue-700 border-blue-200/70'
+                                : 'bg-pink-50/70 text-pink-700 border-pink-200/70'
+                            }`}
+                          >
+                            {student.gender}
+                          </span>
                           {groupNum ? (
                             <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white text-[#697589] border border-[#E8DEDA]">
                               Tổ {groupNum}
@@ -666,12 +828,18 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                     {selectedStudentIds.length} học sinh
                   </span>
                 </div>
-                {commonNote.trim() && (
-                  <div className="pt-1 border-t border-[#E8DEDA] flex items-start justify-between gap-2">
-                    <span className="text-[#697589] font-medium shrink-0">Ghi chú:</span>
-                    <span className="text-[#233146] text-right italic truncate">{commonNote.trim()}</span>
-                  </div>
-                )}
+                <div className="pt-1.5 border-t border-[#E8DEDA] flex items-start justify-between gap-2">
+                  <span className="text-[#697589] font-medium shrink-0">Ghi chú:</span>
+                  <span
+                    className={`text-right whitespace-pre-wrap break-words max-h-20 overflow-y-auto custom-scrollbar ${
+                      commonNote.trim()
+                        ? 'text-[#233146] font-semibold'
+                        : 'text-[#697589]/70 italic'
+                    }`}
+                  >
+                    {commonNote.trim() || 'Không có ghi chú'}
+                  </span>
+                </div>
               </div>
 
               {/* Duplicate same-day warning */}
@@ -691,7 +859,7 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                   <Users className="w-8 h-8 text-[#E8DEDA] mb-2" />
                   <p className="text-xs font-bold text-[#233146]">Chưa chọn học sinh nào</p>
                   <p className="text-[11px] text-[#697589] mt-1">
-                    Tích chọn học sinh hoặc bấm nút chọn tổ bên trái để xem trước danh sách.
+                    Tích chọn học sinh bên trái hoặc dùng bộ lọc Tổ / Nam – Nữ để lọc danh sách hiển thị.
                   </p>
                 </div>
               ) : (
@@ -754,7 +922,27 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
                 </div>
               )}
 
-              {/* Preview Simulation Result Banner */}
+              {/* Live Save Failure Summary Banner */}
+              {saveErrorSummary && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-950 text-[11px] space-y-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 font-black text-rose-800">
+                    <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>Lưu dữ liệu không thành công</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px] font-bold">
+                    <span className="text-emerald-700">Thành công: {saveErrorSummary.savedCount}</span>
+                    <span className="text-rose-700">Thất bại: {saveErrorSummary.failedCount}</span>
+                  </div>
+                  <p className="leading-relaxed text-rose-900">
+                    <strong>Lý do:</strong> {saveErrorSummary.error}
+                  </p>
+                  <p className="text-[10px] text-rose-800/90">
+                    Hệ thống giữ nguyên dữ liệu cũ (không ghi dở dang). Thầy/Cô có thể bấm xác nhận lại để thử lưu an toàn mà không bị tạo trùng.
+                  </p>
+                </div>
+              )}
+
+              {/* Preview Simulation Result Banner (only when preview-only mode is explicitly forced) */}
               {previewSimulationResult && !isPersistenceEnabled && (
                 <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-[11px] space-y-1 shrink-0">
                   <div className="flex items-center gap-1.5 font-black text-emerald-800">
@@ -774,9 +962,14 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
 
         {/* Pinned Footer (Always Visible) */}
         <div className="px-4 sm:px-6 py-3 border-t border-[#E8DEDA] bg-[#FFF8F4] flex flex-col sm:flex-row items-center justify-between gap-2.5 shrink-0">
-          <div className="text-[11px] sm:text-xs text-[#697589] text-center sm:text-left">
+          <div className="text-[11px] sm:text-xs text-[#697589] text-center sm:text-left flex items-center gap-1.5">
             {isPersistenceEnabled ? (
-              <span>Mỗi học sinh sẽ được tạo 1 bản ghi riêng biệt và đồng bộ lên Supabase.</span>
+              <>
+                <Database className="w-3.5 h-3.5 text-[#922235] shrink-0 hidden sm:inline" />
+                <span>
+                  Mỗi học sinh sẽ được lưu thành 1 bản ghi riêng và tự động cập nhật điểm {semesterDisplayLabel} trên Supabase.
+                </span>
+              </>
             ) : (
               <span>
                 Đang ở chế độ <strong className="text-[#922235]">Kiểm tra giao diện &amp; Xem trước</strong> (không ghi vào Supabase).
@@ -789,20 +982,152 @@ export const BatchViolationModal: React.FC<BatchViolationModalProps> = ({
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 sm:flex-none px-5 py-2 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold rounded-xl text-xs sm:text-sm border border-[#E8DEDA] transition-colors cursor-pointer"
+              className="flex-1 sm:flex-none px-5 py-2 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold rounded-xl text-xs sm:text-sm border border-[#E8DEDA] transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
             >
               Đóng
             </button>
             <button
               type="button"
-              onClick={handleConfirmSubmit}
+              onClick={handlePrimaryConfirmClick}
               disabled={!canConfirm}
-              className="flex-1 sm:flex-none px-5 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-black rounded-xl text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex-1 sm:flex-none px-5 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-black rounded-xl text-xs sm:text-sm shadow-md transition-all cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed whitespace-nowrap flex items-center justify-center gap-2"
             >
-              {isSubmitting ? 'Đang lưu...' : 'XÁC NHẬN GHI NHẬN HÀNG LOẠT'}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <span>XÁC NHẬN GHI NHẬN HÀNG LOẠT</span>
+              )}
             </button>
           </div>
         </div>
+
+        {/* Final Confirmation Dialog Overlay (before real Supabase write) */}
+        {isFinalConfirmOpen && selectedRule && (
+          <div
+            className="absolute inset-0 z-20 bg-black/50 backdrop-blur-[2px] flex items-center justify-center p-4"
+            onClick={() => {
+              if (!isSubmitting) setIsFinalConfirmOpen(false);
+            }}
+            role="alertdialog"
+            aria-modal="true"
+            aria-label="Xác nhận lưu vi phạm hàng loạt vào Supabase"
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl border border-[#E8DEDA] w-full max-w-md overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 bg-[#FFF8F4] border-b border-[#E8DEDA] flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#922235] text-white flex items-center justify-center shrink-0">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-[#233146] uppercase">
+                    Xác nhận lưu dữ liệu vi phạm
+                  </h4>
+                  <p className="text-[11px] text-[#697589] mt-0.5">
+                    Kiểm tra lần cuối trước khi ghi chính thức lên Supabase
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-3 text-xs">
+                <div className="rounded-xl bg-[#FFF8F4] border border-[#E8DEDA] p-3.5 space-y-2">
+                  <div className="flex justify-between gap-2">
+                    <span className="text-[#697589]">Lớp / Học kỳ:</span>
+                    <span className="font-bold text-[#233146] text-right">
+                      Lớp {state.config.className} • {semesterDisplayLabel} ({dateResolution.schoolYear})
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-[#697589]">Ngày vi phạm:</span>
+                    <span className="font-bold text-[#233146]">
+                      {formatDisplayDate(violationDate)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-[#697589] shrink-0">Lỗi vi phạm:</span>
+                    <span className="font-bold text-[#233146] text-right">{selectedRule.name}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-[#697589]">Mức điểm trừ:</span>
+                    <span className="font-black text-rose-700">
+                      -{selectedRule.points} điểm / học sinh
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span className="text-[#697589]">Số bản ghi sẽ tạo:</span>
+                    <span className="font-black text-[#922235]">
+                      {selectedStudentsList.length} học sinh
+                    </span>
+                  </div>
+                  {commonNote.trim() && (
+                    <div className="flex justify-between gap-2 pt-1.5 border-t border-[#E8DEDA]">
+                      <span className="text-[#697589] shrink-0">Ghi chú:</span>
+                      <span className="font-semibold text-[#233146] text-right whitespace-pre-wrap break-words max-h-20 overflow-y-auto custom-scrollbar">
+                        {commonNote.trim()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Concise list of selected students */}
+                <div className="rounded-xl border border-[#E8DEDA] bg-white p-3">
+                  <p className="text-[11px] font-bold text-[#697589] mb-1.5">
+                    Danh sách học sinh áp dụng:
+                  </p>
+                  <p className="text-xs font-bold text-[#233146] leading-relaxed">
+                    {selectedStudentsList
+                      .slice(0, 6)
+                      .map((s) => s.name)
+                      .join(', ')}
+                    {selectedStudentsList.length > 6
+                      ? ` và ${selectedStudentsList.length - 6} học sinh khác.`
+                      : '.'}
+                  </p>
+                </div>
+
+                {duplicateSameDayIds.size > 0 && (
+                  <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2">
+                    <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <span>
+                      Lưu ý: Có <strong>{duplicateSameDayIds.size} học sinh</strong> đã có cùng lỗi này trong ngày{' '}
+                      <strong>{formatDisplayDate(violationDate)}</strong>. Nếu tiếp tục, hệ thống sẽ ghi nhận thêm bản ghi mới cho các em đó.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="px-5 py-3.5 bg-[#FFF8F4] border-t border-[#E8DEDA] flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={() => setIsFinalConfirmOpen(false)}
+                  className="px-4 py-2 bg-white hover:bg-[#F5EDEB] text-[#233146] font-bold rounded-xl text-xs border border-[#E8DEDA] transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                >
+                  Quay lại kiểm tra
+                </button>
+                <button
+                  type="button"
+                  disabled={isSubmitting}
+                  onClick={handleExecuteLiveSave}
+                  className="px-4 py-2 bg-[#922235] hover:bg-[#781C2B] text-white font-black rounded-xl text-xs shadow-md transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1.5"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Đang lưu vào Supabase...</span>
+                    </>
+                  ) : (
+                    <span>Đồng ý &amp; Lưu ngay</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

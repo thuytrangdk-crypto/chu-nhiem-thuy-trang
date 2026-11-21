@@ -64,6 +64,7 @@ import {
   parseGradeValue,
 } from '../utils/academicHelpers';
 import { exportStudentViolationsToExcel } from '../utils/violationExcelHelper';
+import { BatchSaveResult } from '../utils/batchDisciplineHelpers';
 import { PrintReportModal } from './PrintReportModal';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { ConfirmModal } from './ConfirmModal';
@@ -85,6 +86,10 @@ interface StudentProfileModalProps {
     grades: Record<string, number | undefined>
   ) => void;
   onAddDiscipline: (record: Omit<DisciplineRecord, 'id'>) => void;
+  onAddBatchDiscipline?: (
+    records: Omit<DisciplineRecord, 'id'>[],
+    batchId: string
+  ) => Promise<BatchSaveResult>;
   onUpdateDiscipline?: (record: DisciplineRecord) => void;
   onDeleteDiscipline: (recordId: string) => void;
   onDeleteAttendance?: (attendanceId: string) => void;
@@ -107,6 +112,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   onSaveGrades,
   onSaveAcademicGrades,
   onAddDiscipline,
+  onAddBatchDiscipline,
   onUpdateDiscipline,
   onDeleteDiscipline,
   onDeleteAttendance,
@@ -1917,14 +1923,15 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
         onCancel={() => setConfirmDeleteAttendanceId(null)}
       />
 
-      {/* Batch Violation Modal (Preview-only mode until teacher activates Supabase save) */}
+      {/* Batch Violation Modal (Official Live Supabase Persistence) */}
       {isTeacher && (
         <BatchViolationModal
           isOpen={isBatchViolationOpen}
           state={state}
           onClose={() => setIsBatchViolationOpen(false)}
           onShowToast={onShowToast}
-          isPersistenceEnabled={false}
+          isPersistenceEnabled={true}
+          onConfirmBatchSave={onAddBatchDiscipline}
           highlightStudentId={student.id}
         />
       )}
